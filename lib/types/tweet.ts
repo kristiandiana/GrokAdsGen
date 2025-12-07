@@ -32,6 +32,10 @@ export type PublicMentionTweet = {
     isRetweet?: boolean;
   };
   
+  export type ScoredMention = PublicMentionTweet & {
+    engagement_score: number;
+  };
+
   // sentiment analysis of the public mention tweet
   export type AnnotatedMention = {
     tweet_id: string;
@@ -41,6 +45,7 @@ export type PublicMentionTweet = {
     key_phrase: string | null;
     is_sarcasm: boolean;
     intensity: 'low' | 'medium' | 'high';
+    analyzed_at: number;          // timestamp in ms
   };
   
   // one per topic
@@ -93,3 +98,4 @@ export type PublicMentionTweet = {
     height: number;
     seed?: number;              
   };
+
