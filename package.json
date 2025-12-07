@@ -15,7 +15,8 @@
     "next": "^14.0.4",
     "openai": "^4.104.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "twitter-api-v2": "^1.28.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.10",

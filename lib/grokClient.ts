@@ -50,6 +50,27 @@ export async function callGrok(
   return jsonMode ? JSON.parse(content.trim()) : content;
 }
 
+export async function callGrokVision(prompt: string, imageUrl: string) {
+    const response = await client.chat.completions.create({
+        model: 'grok-2-vision-1212',
+        messages: [
+            {
+                role: 'user',
+                content: [
+                    { type: 'text', text: prompt },
+                    { type: 'image_url', image_url: { url: imageUrl } }
+                ]
+            }
+        ],
+        temperature: 0.2,
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) throw new Error('No description returned from Grok Vision');
+    
+    return content;
+}
+
 export async function generateImage(prompt: string): Promise<GeneratedImage> {
   const response = await fetch("https://api.x.ai/v1/images/generations", {
     method: "POST",
