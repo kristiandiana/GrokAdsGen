@@ -5,7 +5,11 @@ import { DataSet } from "vis-data";
 import "../styles/tailwind.css";
 import { Topic, Post, Ad, Sentiment, Prominence, AdFormat } from "../types";
 import { stateManager } from "../store/state";
-import { createPostCardContainer } from "../components/PostCard";
+import {
+  createPostCardContainer,
+  createPostCard,
+} from "../components/PostCard";
+import { createAdCardContainer } from "../components/AdCard";
 
 console.log("BrandPulse Extension: Content script loaded");
 
@@ -105,6 +109,8 @@ const sampleTopics: Topic[] = [
         target: "Positive sentiment",
         format: "video",
         cta: "Shop Now",
+        videoUrl:
+          "https://v3b.fal.media/files/b/0a85564e/V3I_5kVHZmiu4cUplWRek_tmpiflpqcw6.mp4",
       },
       {
         id: "ad-4",
@@ -2114,90 +2120,9 @@ function showContentView(
 
     // Show actionable steps and ad suggestions
     contentHTML = `
-      <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div id="ads-container" style="display: flex; flex-direction: column;">
+      </div>
     `;
-
-    topic.ads.forEach((ad: Ad) => {
-      contentHTML += `
-          <div class="ad-suggestion" style="
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 2px solid #3b82f6;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(59, 130, 246, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(59, 130, 246, 0.1)'">
-            <div style="display: flex; gap: 20px; margin-bottom: 16px;">
-              <div style="
-                width: 140px;
-                height: 140px;
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 13px;
-                font-weight: 600;
-                flex-shrink: 0;
-                box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-              ">Image/Video</div>
-              <div style="flex: 1;">
-                <h4 style="
-                  font-size: 18px;
-                  font-weight: 700;
-                  margin: 0 0 12px 0;
-                  color: #1e40af;
-                ">${ad.title}</h4>
-                <div style="
-                  font-size: 14px;
-                  color: #1e3a8a;
-                  margin-bottom: 16px;
-                  line-height: 1.6;
-                ">
-                  <div style="margin-bottom: 6px;"><strong>Target:</strong> ${ad.target}</div>
-                  <div style="margin-bottom: 6px;"><strong>Format:</strong> ${ad.format}</div>
-                  <div><strong>CTA:</strong> "${ad.cta}"</div>
-                </div>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                  <label style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                    color: #1e40af;
-                    cursor: pointer;
-                    padding: 8px 12px;
-                    background: white;
-                    border-radius: 6px;
-                    border: 1px solid #3b82f6;
-                  ">
-                    <input type="checkbox" style="cursor: pointer; width: 16px; height: 16px;">
-                    Use in campaign
-                  </label>
-                  <label style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                    color: #1e40af;
-                    cursor: pointer;
-                    padding: 8px 12px;
-                    background: white;
-                    border-radius: 6px;
-                    border: 1px solid #3b82f6;
-                  ">
-                    <input type="checkbox" style="cursor: pointer; width: 16px; height: 16px;">
-                    Generate variations
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-    });
-
-    contentHTML += `</div>`;
   } else if (nodeType === "analysis") {
     // Set title
     contentTitle.textContent = "Sentiment Analysis";
@@ -2260,39 +2185,32 @@ function showContentView(
         margin: 0 0 20px 0;
         color: #1f2937;
       ">Relevant Tweets</h3>
-      <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div id="posts-container" style="display: flex; flex-direction: column;">
+      </div>
     `;
-
-    topic.posts.forEach((post: Post) => {
-      contentHTML += `
-          <div class="tweet-item" style="
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            position: relative;
-            padding-left: 24px;
-            border-left: 5px solid ${sentimentColor};
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
-          " onmouseover="this.style.transform='translateX(4px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.1)'" onmouseout="this.style.transform='translateX(0)'; this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.05)'">
-            <div style="font-size: 15px; color: #1f2937; margin-bottom: 12px; line-height: 1.6;">
-              "${post.text}"
-            </div>
-            <div style="font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 12px;">
-              <span style="font-weight: 600; color: #3b82f6;">${post.username}</span>
-              <span>•</span>
-              <span>${post.timestamp}</span>
-              <span>•</span>
-              <span style="color: ${sentimentColor}; font-weight: 600;">${post.retweets} retweets</span>
-            </div>
-          </div>
-        `;
-    });
-
-    contentHTML += `</div>`;
   }
 
   contentBody.innerHTML = contentHTML;
+
+  // If actionable-steps view, populate ads using AdCard component
+  if (nodeType === "actionable-steps") {
+    const adsContainer = contentBody.querySelector("#ads-container");
+    if (adsContainer) {
+      const adsWithTopics = topic.ads.map((ad) => ({ ad, topic }));
+      const adContainer = createAdCardContainer(adsWithTopics);
+      adsContainer.appendChild(adContainer);
+    }
+  } else if (nodeType === "analysis") {
+    // If analysis view, populate posts using PostCard component
+    const postsContainer = contentBody.querySelector("#posts-container");
+    if (postsContainer) {
+      const postsWithTopics = topic.posts.map((post) => ({ post, topic }));
+      const postContainer = createPostCardContainer(postsWithTopics, {
+        showTopicContext: false,
+      });
+      postsContainer.appendChild(postContainer);
+    }
+  }
 
   // Setup back button to return to topic view
   const backBtn = dashboard.querySelector("#back-to-topic-btn");
@@ -2403,31 +2321,19 @@ function populateAdsView(dashboard: HTMLElement) {
     });
   });
 
-  let adsHTML = "";
-  allAds.forEach(({ ad }) => {
-    adsHTML += `
-      <div class="list-item" style="
-        padding: 16px;
-        border-bottom: 1px solid #e1e8ed;
-        cursor: pointer;
-      " onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='#ffffff'">
-        <div style="font-size: 14px; color: #14171a; margin-bottom: 8px; font-weight: 500;">
-          ${ad.title}
-        </div>
-        <div style="font-size: 12px; color: #657786; display: flex; gap: 16px; margin-bottom: 8px;">
-          <span>${ad.format}</span>
-          <span>Target: ${ad.target}</span>
-        </div>
-        <div style="font-size: 12px; color: #667eea; font-weight: 500;">
-          CTA: "${ad.cta}"
-        </div>
-      </div>
-    `;
+  // Clear existing content
+  adsView.innerHTML = "";
+
+  // Create ad cards using the AdCard component
+  const adContainer = createAdCardContainer(allAds, {
+    onClick: (ad, topic) => {
+      showContentView(dashboard, "actionable-steps", topic);
+    },
   });
 
-  adsView.innerHTML = adsHTML;
+  adsView.appendChild(adContainer);
 
-  // Re-setup click handlers
+  // Re-setup click handlers (for other views)
   setupTabViewItemHandlers(dashboard);
 }
 
@@ -2566,48 +2472,10 @@ function showTopicDetail(dashboard: HTMLElement, topic: Topic) {
         <span class="tweets-arrow" style="transition: transform 0.2s; color: #657786;">▼</span>
       </button>
       <div class="tweets-content" style="display: none;">
-        <div class="tweets-list" style="
+        <div id="topic-detail-posts" class="tweets-list" style="
           display: flex;
           flex-direction: column;
-          gap: 12px;
         ">
-  `;
-
-  topic.posts.forEach((post: Post) => {
-    const postSentimentColor =
-      post.sentiment === "positive"
-        ? "#17bf63"
-        : post.sentiment === "negative"
-        ? "#e0245e"
-        : "#f59e0b";
-    contentHTML += `
-      <div class="tweet-item" style="
-        padding: 12px;
-        background: #f7f9fa;
-        border-radius: 8px;
-        position: relative;
-        padding-left: 20px;
-      ">
-        <div style="
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 4px;
-          background: ${postSentimentColor};
-          border-radius: 8px 0 0 8px;
-        "></div>
-        <div style="font-size: 14px; color: #14171a; margin-bottom: 4px;">
-          "${post.text}"
-        </div>
-        <div style="font-size: 12px; color: #657786;">
-          ${post.username} • ${post.timestamp} • ${post.retweets} retweets
-        </div>
-      </div>
-    `;
-  });
-
-  contentHTML += `
         </div>
       </div>
     </div>
@@ -2643,83 +2511,30 @@ function showTopicDetail(dashboard: HTMLElement, topic: Topic) {
         <span class="actionable-arrow" style="transition: transform 0.2s; color: #657786;">▼</span>
       </button>
       <div class="actionable-content" style="display: none;">
-  `;
-
-  topic.ads.forEach((ad: Ad) => {
-    contentHTML += `
-      <div class="ad-suggestion" style="
-        background: #f7f9fa;
-        border: 1px solid #e1e8ed;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
-      ">
-        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-          <div style="
-            width: 120px;
-            height: 120px;
-            background: #ffffff;
-            border: 1px solid #e1e8ed;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #657786;
-            font-size: 12px;
-            flex-shrink: 0;
-          ">Image/Video</div>
-          <div style="flex: 1;">
-            <h4 style="
-              font-size: 14px;
-              font-weight: 600;
-              margin: 0 0 8px 0;
-              color: #14171a;
-            ">Ad Suggestion: ${ad.title}</h4>
-            <div style="
-              font-size: 12px;
-              color: #657786;
-              margin-bottom: 12px;
-            ">
-              <div>Target: ${ad.target}</div>
-              <div>Format: ${ad.format}</div>
-              <div>CTA: "${ad.cta}"</div>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <label style="
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                font-size: 12px;
-                color: #14171a;
-                cursor: pointer;
-              ">
-                <input type="checkbox" style="cursor: pointer;">
-                Use in campaign
-              </label>
-              <label style="
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                font-size: 12px;
-                color: #14171a;
-                cursor: pointer;
-              ">
-                <input type="checkbox" style="cursor: pointer;">
-                Generate variations
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  });
-
-  contentHTML += `
+        <div id="topic-detail-ads"></div>
       </div>
     </div>
   `;
 
   detailContent.innerHTML = contentHTML;
+
+  // Populate posts using PostCard component
+  const topicDetailPosts = detailContent.querySelector("#topic-detail-posts");
+  if (topicDetailPosts) {
+    const postsWithTopics = topic.posts.map((post) => ({ post, topic }));
+    const postContainer = createPostCardContainer(postsWithTopics, {
+      showTopicContext: false,
+    });
+    topicDetailPosts.appendChild(postContainer);
+  }
+
+  // Populate ads using AdCard component
+  const topicDetailAds = detailContent.querySelector("#topic-detail-ads");
+  if (topicDetailAds) {
+    const adsWithTopics = topic.ads.map((ad) => ({ ad, topic }));
+    const adContainer = createAdCardContainer(adsWithTopics);
+    topicDetailAds.appendChild(adContainer);
+  }
 
   // Setup back button
   const backBtn = dashboard.querySelector("#back-to-graph-btn");
