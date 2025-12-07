@@ -32,6 +32,10 @@ export type PublicMentionTweet = {
     isRetweet?: boolean;
   };
   
+  export type ScoredMention = PublicMentionTweet & {
+    engagement_score: number;
+  };
+
   // sentiment analysis of the public mention tweet
   export type AnnotatedMention = {
     tweet_id: string;
@@ -93,3 +97,4 @@ export type PublicMentionTweet = {
     height: number;
     seed?: number;              
   };
+
