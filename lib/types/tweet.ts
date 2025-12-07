@@ -45,6 +45,7 @@ export type PublicMentionTweet = {
     key_phrase: string | null;
     is_sarcasm: boolean;
     intensity: 'low' | 'medium' | 'high';
+    analyzed_at: number;          // timestamp in ms
   };
   
   // one per topic
