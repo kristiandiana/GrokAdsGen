@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:pika": "ts-node --transpile-only scripts/test-pika.ts",
+    "test:video-ads": "ts-node --transpile-only scripts/test-video-ads.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
