@@ -181,7 +181,11 @@ export async function generateVideoAdIdeas(
   const prompt = `${voiceContext}
         ${suggestionContext}
 
-        You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
+        You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}${
+    brand_handle.toLowerCase().includes("tesla")
+      ? " (the electric vehicle and clean energy company known for Tesla cars, Model Y, Model 3, Cybertruck, and electric vehicles)"
+      : ""
+  }.
         Generate exactly 3 video ad ideas that directly address the suggestion above.
 
         Rules:
@@ -189,8 +193,20 @@ export async function generateVideoAdIdeas(
         - Vary objectives: one awareness, one engagement, one conversions
         - Format: video (16:9 aspect ratio recommended)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
-        - Video prompt must be detailed, cinematic, and describe motion/action
-        - Video prompts should be 2-3 sentences describing the visual narrative
+        
+        CRITICAL VIDEO PROMPT GUIDELINES (for best quality output):
+        - Video prompts should be SIMPLE and FOCUSED - avoid complex scenes with multiple moving elements
+        - Use MINIMAL MOTION: prefer slow, subtle camera movements (gentle pan, slow zoom, or static shot)
+        - Avoid: fast movements, multiple subjects moving, complex action sequences, rapid transitions
+        - Prefer: single subject, slow camera movement, cinematic lighting, professional composition
+        - Keep prompts to 1-2 sentences maximum - be concise and specific
+        - Focus on ONE clear visual: a product, a scene, or a single action
+        - Use descriptive but simple language: "slow camera pan", "gentle zoom", "static shot with subtle lighting"
+        - ${
+          brand_handle.toLowerCase().includes("tesla")
+            ? "IMPORTANT: Video prompts MUST feature Tesla electric vehicles, Tesla cars, Tesla models, or Tesla technology. Examples: 'A Tesla Model Y in a static shot with cinematic lighting', 'Slow camera pan across a Tesla Model 3', 'Tesla Cybertruck in a professional product showcase with minimal motion'. Make it clear these are Tesla car advertisements."
+            : "Video prompts should be specific to the brand and product."
+        }
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -201,7 +217,7 @@ export async function generateVideoAdIdeas(
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions",
-              "video_prompt": string (detailed, cinematic video description with motion)
+              "video_prompt": string (1-2 sentences, simple and focused, minimal motion - use slow camera movements or static shots, avoid complex scenes)
             },
             ... (exactly 3 items)
           ]
@@ -268,6 +284,8 @@ export async function generateVideoAdIdeas(
             aspect_ratio: "16:9",
             resolution: "720p",
             duration: 5,
+            negative_prompt:
+              "fast motion, rapid movement, multiple subjects moving, complex action, chaotic scene, blurry, low quality, distorted",
           });
 
           ad.video_url = result.video_url;
@@ -286,6 +304,8 @@ export async function generateVideoAdIdeas(
             aspect_ratio: "16:9",
             resolution: "720p",
             duration: 5,
+            negative_prompt:
+              "fast motion, rapid movement, multiple subjects moving, complex action, chaotic scene, blurry, low quality, distorted",
           });
 
           ad.video_id = videoResponse.video_id;
