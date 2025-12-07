@@ -170,7 +170,28 @@ export function createAdCard(
 
   // Media (image or video)
   if (ad.videoUrl) {
-    // Try to use video element first, but fall back to thumbnail if it fails
+    const videoUrl = ad.videoUrl; // Store in const for type safety
+    console.log("Loading video from URL:", videoUrl);
+
+    // Fetch the video as a blob and convert to object URL
+    const loadVideoAsBlob = async () => {
+      try {
+        console.log("Fetching video as blob...");
+        const response = await fetch(videoUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        console.log("Video blob created successfully");
+        return { blobUrl, blob };
+      } catch (error) {
+        console.error("Failed to fetch video as blob:", error);
+        return null;
+      }
+    };
+
+    // Create video element
     const video = document.createElement("video");
     video.controls = true;
     video.loop = true;
@@ -187,124 +208,127 @@ export function createAdCard(
     `;
     video.setAttribute("playsinline", "true");
     video.setAttribute("preload", "metadata");
-    video.setAttribute("crossorigin", "anonymous");
 
-    console.log("Attempting to load video:", ad.videoUrl);
-
-    // Create fallback thumbnail overlay (hidden initially)
-    const thumbnailOverlay = document.createElement("div");
-    thumbnailOverlay.style.cssText = `
+    // Create loading indicator
+    const loadingOverlay = document.createElement("div");
+    loadingOverlay.style.cssText = `
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    `;
+    loadingOverlay.innerHTML = `
+      <div style="font-size: 14px; margin-bottom: 8px;">Loading video...</div>
+      <div style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+    `;
+
+    // Create download button
+    const downloadButton = document.createElement("button");
+    downloadButton.style.cssText = `
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 101;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
       display: none;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      transition: opacity 0.2s;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     `;
-
-    const playButton = document.createElement("div");
-    playButton.style.cssText = `
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      transition: transform 0.2s, background 0.2s;
-    `;
-    playButton.innerHTML = `
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M8 5v14l11-7L8 5z" fill="#667eea"/>
+    downloadButton.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.979 19.804 4.587 19.412C4.195 19.02 4 18.55 4 18V15H6V18H18V15H20V18C20 18.55 19.804 19.02 19.412 19.412C19.02 19.804 18.55 20 18 20H6Z" fill="white"/>
       </svg>
     `;
-
-    thumbnailOverlay.addEventListener("mouseenter", () => {
-      playButton.style.transform = "scale(1.1)";
-      playButton.style.background = "rgba(255, 255, 255, 1)";
+    downloadButton.addEventListener("mouseenter", () => {
+      downloadButton.style.background = "rgba(0, 0, 0, 0.9)";
+      downloadButton.style.transform = "scale(1.1)";
+    });
+    downloadButton.addEventListener("mouseleave", () => {
+      downloadButton.style.background = "rgba(0, 0, 0, 0.7)";
+      downloadButton.style.transform = "scale(1)";
     });
 
-    thumbnailOverlay.addEventListener("mouseleave", () => {
-      playButton.style.transform = "scale(1)";
-      playButton.style.background = "rgba(255, 255, 255, 0.9)";
-    });
-
-    const videoLabel = document.createElement("div");
-    videoLabel.style.cssText = `
-      position: absolute;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      font-size: 14px;
-      font-weight: 500;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    `;
-    videoLabel.textContent = "Click to play video";
-
-    thumbnailOverlay.appendChild(playButton);
-    thumbnailOverlay.appendChild(videoLabel);
-
-    // Click handler for thumbnail - opens video in new tab
-    thumbnailOverlay.addEventListener("click", (e) => {
-      e.stopPropagation();
-      window.open(ad.videoUrl, "_blank");
-    });
-
-    // Error handler - show thumbnail fallback
-    let errorHandled = false;
-    video.addEventListener("error", () => {
-      if (errorHandled) return;
-      errorHandled = true;
-
-      console.log(
-        "Video element failed to load, showing thumbnail fallback:",
-        ad.videoUrl
-      );
-
-      // Hide video, show thumbnail
-      video.style.display = "none";
-      thumbnailOverlay.style.display = "flex";
-    });
-
-    // Success handler
-    video.addEventListener("canplay", () => {
-      console.log("Video loaded successfully");
-      thumbnailOverlay.style.display = "none";
-      video.play().catch((err) => {
-        console.log("Autoplay prevented:", err);
-      });
-    });
-
-    // Set a timeout fallback in case error event doesn't fire
-    const fallbackTimeout = setTimeout(() => {
-      if (video.readyState === 0) {
-        console.log("Video loading timeout, showing thumbnail fallback");
-        video.style.display = "none";
-        thumbnailOverlay.style.display = "flex";
-        errorHandled = true;
-      }
-    }, 3000);
-
-    video.addEventListener("loadeddata", () => {
-      clearTimeout(fallbackTimeout);
-    });
-
-    // Try to load video
-    video.src = ad.videoUrl;
-    video.load();
-
+    mediaContainer.appendChild(loadingOverlay);
     mediaContainer.appendChild(video);
-    mediaContainer.appendChild(thumbnailOverlay);
+    mediaContainer.appendChild(downloadButton);
+
+    // Load video as blob
+    loadVideoAsBlob().then((result) => {
+      if (result) {
+        const { blobUrl, blob } = result;
+
+        // Set video source to blob URL
+        video.src = blobUrl;
+        video.load();
+
+        // Hide loading overlay once video can play
+        video.addEventListener("canplay", () => {
+          console.log("Video ready to play");
+          loadingOverlay.style.display = "none";
+          downloadButton.style.display = "flex";
+          video.play().catch((err) => {
+            console.log("Autoplay prevented:", err);
+          });
+        });
+
+        // Setup download button
+        downloadButton.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const a = document.createElement("a");
+          a.href = blobUrl;
+          a.download = `ad-${ad.id}-video.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          console.log("Video download initiated");
+        });
+
+        // Cleanup blob URL when video is removed
+        video.addEventListener("error", () => {
+          console.error("Video playback error");
+          URL.revokeObjectURL(blobUrl);
+        });
+      } else {
+        // Show error state
+        loadingOverlay.innerHTML = `
+          <div style="font-size: 14px; margin-bottom: 8px;">⚠️ Failed to load video</div>
+          <button onclick="window.open('${videoUrl}', '_blank')" style="
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+          ">Open in new tab</button>
+        `;
+      }
+    });
   } else if (ad.imageUrl) {
+    const imageUrl = ad.imageUrl; // Store in const for type safety
+    console.log("Loading image from URL:", imageUrl);
+
     const img = document.createElement("img");
-    img.src = ad.imageUrl;
+    img.src = imageUrl;
     img.alt = ad.title;
     img.style.cssText = `
       position: absolute;
@@ -314,7 +338,112 @@ export function createAdCard(
       height: 100%;
       object-fit: cover;
     `;
+
+    // Create download button for image
+    const downloadButton = document.createElement("button");
+    downloadButton.style.cssText = `
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 101;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    `;
+    downloadButton.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.979 19.804 4.587 19.412C4.195 19.02 4 18.55 4 18V15H6V18H18V15H20V18C20 18.55 19.804 19.02 19.412 19.412C19.02 19.804 18.55 20 18 20H6Z" fill="white"/>
+      </svg>
+    `;
+    downloadButton.addEventListener("mouseenter", () => {
+      downloadButton.style.background = "rgba(0, 0, 0, 0.9)";
+      downloadButton.style.transform = "scale(1.1)";
+    });
+    downloadButton.addEventListener("mouseleave", () => {
+      downloadButton.style.background = "rgba(0, 0, 0, 0.7)";
+      downloadButton.style.transform = "scale(1)";
+    });
+
+    // Download button click handler - fetch as blob on demand
+    downloadButton.addEventListener("click", async (e) => {
+      e.stopPropagation();
+
+      // Show loading state on button
+      downloadButton.innerHTML = `
+        <div style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      `;
+      downloadButton.disabled = true;
+
+      try {
+        console.log("Downloading image...");
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        // Get file extension from blob type or URL
+        let extension = '.png';
+        if (blob.type === 'image/jpeg' || blob.type === 'image/jpg') extension = '.jpg';
+        else if (blob.type === 'image/png') extension = '.png';
+        else if (blob.type === 'image/gif') extension = '.gif';
+        else if (blob.type === 'image/webp') extension = '.webp';
+        else {
+          // Fallback to URL extension
+          const match = imageUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+          if (match) extension = match[0];
+        }
+
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = `ad-${ad.id}-image${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+
+        console.log("Image download complete");
+
+        // Restore button
+        downloadButton.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.979 19.804 4.587 19.412C4.195 19.02 4 18.55 4 18V15H6V18H18V15H20V18C20 18.55 19.804 19.02 19.412 19.412C19.02 19.804 18.55 20 18 20H6Z" fill="white"/>
+          </svg>
+        `;
+        downloadButton.disabled = false;
+
+      } catch (error) {
+        console.error("Failed to download image:", error);
+
+        // Show error state briefly, then restore
+        downloadButton.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="white"/>
+          </svg>
+        `;
+
+        setTimeout(() => {
+          downloadButton.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.979 19.804 4.587 19.412C4.195 19.02 4 18.55 4 18V15H6V18H18V15H20V18C20 18.55 19.804 19.02 19.412 19.412C19.02 19.804 18.55 20 18 20H6Z" fill="white"/>
+            </svg>
+          `;
+          downloadButton.disabled = false;
+        }, 2000);
+      }
+    });
+
     mediaContainer.appendChild(img);
+    mediaContainer.appendChild(downloadButton);
   } else {
     // Placeholder
     const placeholder = document.createElement("div");
