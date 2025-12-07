@@ -1,26 +1,26 @@
-import { tweetSentimentCache, cleanupSentimentCache, getUnanalyzedTweets, storeBatch } from "./sentimentCache";
-import { AnnotatedMention, ScoredMention } from "./types/tweet";
+import { cleanupSentimentCache } from "./sentimentCache";
+import { ScoredMention } from "./types/tweet";
+import { analyzeAndCacheMentions } from "./sentimentPipeline";
 import { scoreTweets } from "./analysis";
 
 let isRunning = false;
 
-export async function runSentimentWorker() {
+export async function runSentimentWorker(brand = "tesla") {
   if (isRunning) return;
   isRunning = true;
 
-  const res = await fetch("http://localhost:3000/api/brand");
-  const data = await res.json();
+  try {
+    const res = await fetch(`http://localhost:3000/api/brand?brand=${encodeURIComponent(brand)}`);
+    const data = await res.json();
 
-  const scored: ScoredMention[] = scoreTweets(data.public_mentions);
+    const scored: ScoredMention[] = scoreTweets(data.public_mentions);
 
-  const newTweetIds = getUnanalyzedTweets(scored.map((t) => t.id));
-  const newTweets = scored.filter((t) => newTweetIds.includes(t.id));
+    cleanupSentimentCache();
+    await analyzeAndCacheMentions(scored, data.brand_voice || []);
 
-  if (newTweets.length > 0) {
-    // const batchResults = await analyzeSentimentBatch(newTweets);
-    // storeBatch(batchResults);
+  } catch (err) {
+    console.error("Sentiment worker failed:", err);
+  } finally {
+    isRunning = false;
   }
-
-  cleanupSentimentCache();
-  isRunning = false;
 }
