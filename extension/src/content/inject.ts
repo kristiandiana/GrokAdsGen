@@ -2,6 +2,11 @@
 
 console.log('BrandPulse Extension: Content script loaded');
 
+// Track BrandPulse view state
+let isBrandPulseActive = false;
+let mainContentObserver: MutationObserver | null = null;
+let originalContent: HTMLElement | null = null;
+
 // Wait for page to be ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
@@ -15,6 +20,7 @@ function init() {
   // Check if we're on an ads console page
   if (isAdsConsolePage()) {
     waitForSidebar();
+    setupMainContentObserver();
   }
 }
 
@@ -106,9 +112,6 @@ function tryInject(): boolean {
         </span>
       </button>
     </div>
-    <div id="brandpulse-panel" style="display: none; padding: 16px;">
-      <p style="font-size: 12px; color: #666;">BrandPulse extension loaded</p>
-    </div>
   `;
 
   // Insert at the top of the navigation list
@@ -131,19 +134,213 @@ function tryInject(): boolean {
     console.log('BrandPulse: Inserted at beginning of nav list');
   }
 
-  // Add click handler to toggle panel
+  // Add click handler to show BrandPulse view
   const button = brandPulseItem.querySelector('#brandpulse-nav-button');
-  const panel = brandPulseItem.querySelector('#brandpulse-panel') as HTMLElement;
   
-  if (button && panel) {
+  if (button) {
     button.addEventListener('click', () => {
-      const isExpanded = panel.style.display !== 'none';
-      panel.style.display = isExpanded ? 'none' : 'block';
-      button.setAttribute('aria-expanded', (!isExpanded).toString());
+      showBrandPulseView();
+      // Update button state
+      button.setAttribute('aria-expanded', 'true');
+      // Add visual indication (highlight)
+      brandPulseItem.style.backgroundColor = 'rgba(29, 161, 242, 0.1)';
     });
   }
 
   console.log('BrandPulse: Successfully injected into sidebar!');
   return true;
+}
+
+function setupMainContentObserver() {
+  // Watch for changes to main content container (React re-renders)
+  mainContentObserver = new MutationObserver((mutations) => {
+    if (isBrandPulseActive) {
+      // Check if our BrandPulse UI was removed
+      const dashboard = document.getElementById('brandpulse-dashboard');
+      if (!dashboard) {
+        console.log('BrandPulse: Dashboard was removed, re-injecting...');
+        // Small delay to let React finish its update
+        setTimeout(() => {
+          showBrandPulseView();
+        }, 100);
+      }
+    }
+  });
+
+  // Start observing when main content container appears
+  const observeMainContent = () => {
+    const mainContainer = document.querySelector('#mainContentContainer') || document.querySelector('main');
+    if (mainContainer) {
+      mainContentObserver?.observe(mainContainer, {
+        childList: true,
+        subtree: true
+      });
+      console.log('BrandPulse: Main content observer set up');
+    } else {
+      // Retry if not found
+      setTimeout(observeMainContent, 500);
+    }
+  };
+
+  observeMainContent();
+}
+
+function showBrandPulseView() {
+  console.log('BrandPulse: Showing BrandPulse view');
+  isBrandPulseActive = true;
+
+  // Find main content container
+  const mainContainer = document.querySelector('#mainContentContainer') as HTMLElement;
+  
+  if (!mainContainer) {
+    console.error('BrandPulse: Could not find mainContentContainer');
+    return;
+  }
+
+  // Save original content if not already saved
+  if (!originalContent) {
+    originalContent = mainContainer.cloneNode(true) as any as HTMLElement;
+  }
+
+  // Replace content with BrandPulse UI
+  mainContainer.innerHTML = createBrandPulseUI();
+
+  console.log('BrandPulse: Dashboard injected into main content area');
+}
+
+function createBrandPulseUI(): string {
+  return `
+    <div id="brandpulse-dashboard" style="
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: #14171a;
+      background: #ffffff;
+      min-height: 100vh;
+    ">
+      <header style="margin-bottom: 32px; border-bottom: 1px solid #e1e8ed; padding-bottom: 16px;">
+        <h1 style="
+          font-size: 28px;
+          font-weight: 700;
+          margin: 0 0 8px 0;
+          color: #14171a;
+        ">BrandPulse Dashboard</h1>
+        <p style="
+          font-size: 14px;
+          color: #657786;
+          margin: 0;
+        ">Brand insights, sentiment analysis, and content generation</p>
+      </header>
+
+      <div class="brandpulse-panels" style="
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+      ">
+        <!-- Top Tweets Panel -->
+        <section id="top-tweets-panel" style="
+          background: #ffffff;
+          border: 1px solid #e1e8ed;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        ">
+          <h2 style="
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            color: #14171a;
+          ">Top Tweets</h2>
+          <div style="
+            color: #657786;
+            font-size: 14px;
+            padding: 20px;
+            text-align: center;
+            background: #f7f9fa;
+            border-radius: 4px;
+          ">
+            Tweet data will appear here
+          </div>
+        </section>
+
+        <!-- Topic Sentiment Panel -->
+        <section id="sentiment-panel" style="
+          background: #ffffff;
+          border: 1px solid #e1e8ed;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        ">
+          <h2 style="
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            color: #14171a;
+          ">Topic Sentiment</h2>
+          <div style="
+            color: #657786;
+            font-size: 14px;
+            padding: 20px;
+            text-align: center;
+            background: #f7f9fa;
+            border-radius: 4px;
+          ">
+            Sentiment analysis will appear here
+          </div>
+        </section>
+
+        <!-- Suggestions Panel -->
+        <section id="suggestions-panel" style="
+          background: #ffffff;
+          border: 1px solid #e1e8ed;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        ">
+          <h2 style="
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            color: #14171a;
+          ">Actionable Suggestions</h2>
+          <div style="
+            color: #657786;
+            font-size: 14px;
+            padding: 20px;
+            text-align: center;
+            background: #f7f9fa;
+            border-radius: 4px;
+          ">
+            Suggestions will appear here
+          </div>
+        </section>
+
+        <!-- Content Generator Panel -->
+        <section id="content-generator-panel" style="
+          background: #ffffff;
+          border: 1px solid #e1e8ed;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        ">
+          <h2 style="
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            color: #14171a;
+          ">Content Generator</h2>
+          <div style="
+            color: #657786;
+            font-size: 14px;
+            padding: 20px;
+            text-align: center;
+            background: #f7f9fa;
+            border-radius: 4px;
+          ">
+            Meme and ad generation will appear here
+          </div>
+        </section>
+      </div>
+    </div>
+  `;
 }
 
