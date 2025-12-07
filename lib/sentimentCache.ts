@@ -5,11 +5,11 @@ export const tweetSentimentCache = new Map<string, AnnotatedMention>();
 
 export function cleanupSentimentCache() {
   const cutoff = Date.now() - MAX_AGE_MS;
-  for (const [id, entry] of tweetSentimentCache) {
+  Array.from(tweetSentimentCache.entries()).forEach(([id, entry]) => {
     if (entry.analyzed_at < cutoff) {
       tweetSentimentCache.delete(id);
     }
-  }
+  });
 }
 
 export function storeBatch(results: AnnotatedMention[]) {

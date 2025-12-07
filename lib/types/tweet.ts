@@ -13,11 +13,22 @@ export type PublicMentionTweet = {
     };
   };
   
+  export interface MediaObject {
+    type: 'photo' | 'video' | 'animated_gif';
+    url: string;
+    alt_text: string | null;
+    width?: number;
+    height?: number;
+    duration_ms?: number;
+    variants?: Array<{ bitrate?: number; content_type: string; url: string }>;
+  }
+
   //what the brand is saying about the brand
   export type BrandVoiceTweet = {
     id: string;
     text: string;
     created_at: string;
+    author_id?: string;
     public_metrics?: { 
         like_count: number; 
         retweet_count: number;
@@ -25,6 +36,7 @@ export type PublicMentionTweet = {
         quote_count: number;
         impression_count?: number;
     };
+    media?: MediaObject[];
 
     isEdited?: boolean;
     isReply?: boolean;
