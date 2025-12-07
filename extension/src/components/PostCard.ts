@@ -11,8 +11,8 @@ export function createPostCardContainer(
   options: PostCardOptions = {}
 ): HTMLElement {
   const container = document.createElement("div");
-  container.style.background = "#0f1419";
-  container.style.color = "#e7e9ea";
+  container.style.background = "transparent";
+  container.style.color = "#0f172a";
   container.style.padding = "12px";
   container.style.borderRadius = "12px";
   container.style.display = "flex";
@@ -21,8 +21,8 @@ export function createPostCardContainer(
 
   posts.forEach(({ post, topic }) => {
     const card = document.createElement("div");
-    card.style.background = "#15202b";
-    card.style.border = "1px solid #253341";
+    card.style.background = "#f8fafc";
+    card.style.border = "1px solid #e2e8f0";
     card.style.borderRadius = "12px";
     card.style.padding = "12px";
     card.style.display = "flex";
@@ -39,15 +39,15 @@ export function createPostCardContainer(
     header.style.justifyContent = "space-between";
     header.style.gap = "8px";
     header.style.fontSize = "13px";
-    header.style.color = "#8b98a5";
+    header.style.color = "#475569";
 
     const author = document.createElement("div");
     author.style.display = "flex";
     author.style.gap = "6px";
     author.style.alignItems = "center";
-    author.innerHTML = `<span style="color:#e7e9ea;font-weight:600;">${escapeHtml(
-      post.author || post.username || "Unknown"
-    )}</span><span>${escapeHtml(post.username || "")}</span>`;
+    author.innerHTML = `<span style="color:#0f172a;font-weight:600;">${escapeHtml(
+      post.author || "Unknown"
+    )}</span>`;
 
     const time = document.createElement("span");
     time.textContent = post.timestamp || "";
@@ -58,7 +58,7 @@ export function createPostCardContainer(
     const body = document.createElement("div");
     body.style.fontSize = "14px";
     body.style.lineHeight = "1.5";
-    body.style.color = "#e7e9ea";
+    body.style.color = "#0f172a";
     body.style.whiteSpace = "pre-wrap";
     body.textContent = post.text;
 
@@ -66,7 +66,7 @@ export function createPostCardContainer(
     meta.style.display = "flex";
     meta.style.gap = "12px";
     meta.style.fontSize = "12px";
-    meta.style.color = "#8b98a5";
+    meta.style.color = "#475569";
     meta.innerHTML = `
       <span>🔁 ${post.retweets ?? 0}</span>
       <span>❤ ${post.likes ?? 0}</span>

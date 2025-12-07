@@ -57,7 +57,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
           ]
         }
 
-        No extra text.`;
+        No extra text. Respond with ONLY raw JSON, no code fences, no explanations, no trailing commas.`;
 
   try {
     const result = await callGrok(prompt, "grok-4-1-fast-reasoning", true, 0.7); // Higher temp for creativity
@@ -215,7 +215,7 @@ export async function generateVideoAdIdeas(
           ]
         }
 
-        No extra text.`;
+        No extra text. Respond with ONLY raw JSON, no code fences, no explanations, no trailing commas.`;
 
   try {
     const result = await callGrok(prompt, "grok-4-1-fast-reasoning", true, 0.7);
