@@ -4,7 +4,7 @@
   "description": "Chrome extension for BrandPulse Dashboard",
   "scripts": {
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "copyfiles -u 1 public/**/* dist/ && copyfiles -u 2 src/popup/*.html src/popup/*.css dist/popup/",
+    "copy-assets": "copyfiles -u 1 public/**/* dist/",
     "watch": "tsc --watch",
     "dev": "npm run watch"
   },

@@ -18,8 +18,5 @@
       "js": ["dist/content/inject.js"],
       "run_at": "document_idle"
     }
-  ],
-  "action": {
-    "default_popup": "dist/popup/popup.html"
-  }
+  ]
 }
