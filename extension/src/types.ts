@@ -34,6 +34,7 @@ export interface Topic {
   mentionCount: number;
   posts: Post[];
   ads: Ad[];
+  actionableStep?: string;
 }
 
 export interface Tweet {
