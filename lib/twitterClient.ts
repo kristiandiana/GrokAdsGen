@@ -1,61 +1,66 @@
-import {
-  PublicMentionTweet,
-  BrandVoiceTweet
-} from "./types/tweet";
+import { PublicMentionTweet, BrandVoiceTweet } from "./types/tweet";
 
 import { buildQuery } from "./queryStrategies";
 
-const BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN || process.env.X_BEARER_TOKEN;
+const BEARER_TOKEN =
+  process.env.TWITTER_BEARER_TOKEN || process.env.X_BEARER_TOKEN;
 
 const BASE_URL = "https://api.twitter.com/2/tweets/search/recent";
 
-export async function searchPublicMentions(brand: string, targetFilteredCount = 50) {
+export async function searchPublicMentions(
+  brand: string,
+  targetFilteredCount = 50
+) {
   const query = buildQuery(brand);
-  
+
   // We'll fetch in batches of 100 (max allowed per request)
   // And keep fetching until we have `targetFilteredCount` items or hit a safety limit.
-  
+
   let allFilteredTweets: PublicMentionTweet[] = [];
   let nextToken: string | undefined = undefined;
   let requestCount = 0;
-  
-  // 100 requests * 100 tweets = 10,000 max raw tweets
-  const MAX_REQUESTS = 10; 
 
-  console.log(`[TwitterClient] Searching mentions for '${brand}'... Target: ${targetFilteredCount} HQ tweets.`);
+  // 100 requests * 100 tweets = 10,000 max raw tweets
+  const MAX_REQUESTS = 10;
+
+  console.log(
+    `[TwitterClient] Searching mentions for '${brand}'... Target: ${targetFilteredCount} HQ tweets.`
+  );
 
   do {
-    let url = `${BASE_URL}?` + 
-      `query=${encodeURIComponent(query)}` + 
-      `&max_results=100` + // Max allowed per page
+    let url =
+      `${BASE_URL}?` +
+      `query=${encodeURIComponent(query)}` +
+      `&max_results=10` + // Max allowed per page
       `&tweet.fields=author_id,public_metrics,created_at` +
-      `&expansions=author_id` + 
+      `&expansions=author_id` +
       `&user.fields=public_metrics,username`;
-    
+
     if (nextToken) {
-        url += `&next_token=${nextToken}`;
+      url += `&next_token=${nextToken}`;
     }
 
     try {
-        const { tweets, next_token: newNextToken } = await fetchTweetsAndFilterChunk(url);
-        
-        allFilteredTweets = [...allFilteredTweets, ...tweets];
-        nextToken = newNextToken;
-        requestCount++;
+      const { tweets, next_token: newNextToken } =
+        await fetchTweetsAndFilterChunk(url);
 
-        console.log(`[TwitterClient] Batch ${requestCount}: Found ${tweets.length} HQ tweets. Total: ${allFilteredTweets.length}`);
+      allFilteredTweets = [...allFilteredTweets, ...tweets];
+      nextToken = newNextToken;
+      requestCount++;
 
-        if (allFilteredTweets.length >= targetFilteredCount) break;
-        if (!nextToken) break;
-        
-        // Safety pause to avoid hitting rate limits too fast (1s delay)
-        await new Promise(r => setTimeout(r, 1000));
+      console.log(
+        `[TwitterClient] Batch ${requestCount}: Found ${tweets.length} HQ tweets. Total: ${allFilteredTweets.length}`
+      );
 
+      if (allFilteredTweets.length >= targetFilteredCount) break;
+      if (!nextToken) break;
+
+      // Safety pause to avoid hitting rate limits too fast (1s delay)
+      await new Promise((r) => setTimeout(r, 1000));
     } catch (err) {
-        console.error("Pagination error:", err);
-        break;
+      console.error("Pagination error:", err);
+      break;
     }
-
   } while (requestCount < MAX_REQUESTS);
 
   return allFilteredTweets;
@@ -64,7 +69,8 @@ export async function searchPublicMentions(brand: string, targetFilteredCount = 
 // 🔥 NEW: Fetch tweets *by the brand itself*
 export async function searchBrandVoiceTweets(brand: string, limit = 50) {
   const brandVoiceQuery = `from:${brand} -is:retweet lang:en`;
-  const url = `${BASE_URL}?` +
+  const url =
+    `${BASE_URL}?` +
     `query=${encodeURIComponent(brandVoiceQuery)}` +
     `&max_results=${limit}` + // For brand voice, we usually don't need 1000s, just enough for tone
     `&tweet.fields=public_metrics,created_at,attachments` +
@@ -76,7 +82,8 @@ export async function searchBrandVoiceTweets(brand: string, limit = 50) {
 
 export async function searchBrandVisualPosts(brand: string, limit = 20) {
   const query = `from:${brand} (has:images OR has:videos) -is:retweet lang:en`;
-  const url = `${BASE_URL}?` +
+  const url =
+    `${BASE_URL}?` +
     `query=${encodeURIComponent(query)}` +
     `&max_results=${limit}` +
     `&tweet.fields=public_metrics,created_at,attachments` +
@@ -89,10 +96,10 @@ export async function searchBrandVisualPosts(brand: string, limit = 20) {
 export async function searchBrandContext(brand: string, limitPerType = 15) {
   // If user requested massive scale, we'll try to get 10,000 raw tweets (which yields fewer filtered)
   // Or we can set targetFilteredCount to 1000 if we want 1000 *good* tweets.
-  const targetCount = 400; 
-  
+  const targetCount = 400;
+
   const [mentions, visualPosts] = await Promise.all([
-    searchPublicMentions(brand, targetCount), 
+    searchPublicMentions(brand, targetCount),
     searchBrandVisualPosts(brand, limitPerType),
   ]);
 
@@ -103,19 +110,21 @@ export async function searchBrandContext(brand: string, limitPerType = 15) {
 }
 
 // Helper to filter by follower count for ONE chunk
-async function fetchTweetsAndFilterChunk(url: string): Promise<{ tweets: PublicMentionTweet[], next_token?: string }> {
+async function fetchTweetsAndFilterChunk(
+  url: string
+): Promise<{ tweets: PublicMentionTweet[]; next_token?: string }> {
   if (!BEARER_TOKEN) throw new Error("Missing X_BEARER_TOKEN");
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
+    headers: { Authorization: `Bearer ${BEARER_TOKEN}` },
   });
 
   if (!res.ok) {
     if (res.status === 429) {
-        console.warn("⚠️ Rate limit hit! Waiting 60s...");
-        await new Promise(r => setTimeout(r, 60000));
-        // Retry once
-        return fetchTweetsAndFilterChunk(url);
+      console.warn("⚠️ Rate limit hit! Waiting 60s...");
+      await new Promise((r) => setTimeout(r, 60000));
+      // Retry once
+      return fetchTweetsAndFilterChunk(url);
     }
     throw new Error(`Twitter API call failed: ${res.status}`);
   }
@@ -177,7 +186,9 @@ async function fetchTweetsWithMedia(url: string): Promise<BrandVoiceTweet[]> {
   // Attach media to tweets
   tweets.forEach((tweet: any) => {
     if (tweet.attachments?.media_keys) {
-      tweet.media = tweet.attachments.media_keys.map((key: string) => mediaMap.get(key)!).filter(Boolean);
+      tweet.media = tweet.attachments.media_keys
+        .map((key: string) => mediaMap.get(key)!)
+        .filter(Boolean);
     } else {
       tweet.media = [];
     }

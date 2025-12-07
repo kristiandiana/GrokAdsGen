@@ -6,6 +6,7 @@ import "../styles/tailwind.css";
 import { Topic, Post, Ad, Sentiment, Prominence, AdFormat } from "../types";
 import { stateManager } from "../store/state";
 import { createPostCardContainer } from "../components/PostCard";
+import { createAdCardContainer } from "../components/AdCard";
 
 console.log("BrandPulse Extension: Content script loaded");
 
@@ -73,8 +74,7 @@ const sampleTopics: Topic[] = [
         format: "single image",
         cta: "Track Your Order",
       },
-    ]
-    ,
+    ],
     "Acknowledge the delays up front and show a concrete fix: new carriers, faster lanes, or guaranteed delivery windows. Pair creative with live delivery speed stats or customer screenshots of fast arrivals. Retarget anyone who asked about shipping with a clear CTA to track their order or choose express. Keep the tone empathetic and specific, not generic apologies."
   ),
   createTopic(
@@ -109,6 +109,17 @@ const sampleTopics: Topic[] = [
         target: "Positive sentiment",
         format: "video",
         cta: "Shop Now",
+        videoUrl:
+          "https://v3b.fal.media/files/b/0a855bc2/5VMBX7yh8nqqvEuos7_PR_tmp_tlx4uej.mp4",
+      },
+      {
+        id: "ad-3b",
+        title: "New Collection Preview",
+        target: "Fashion enthusiasts",
+        format: "single image",
+        cta: "Explore Now",
+        imageUrl:
+          "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-f2863e62-f5d8-47d0-b0e5-729036fa92a6.png",
       },
       {
         id: "ad-4",
@@ -117,9 +128,8 @@ const sampleTopics: Topic[] = [
         format: "carousel",
         cta: "Explore Collection",
       },
-    ]
-    ,
-    "Ride the hype: lead with the hero colorway in motion, then show quick styling combos. Use social proof from creators and early buyers, and invite UGC with a simple hashtag. Offer limited drops or early access for those who engage with colorway content. Keep CTAs playful - \"Style your fit\" instead of \"Buy now\"."
+    ],
+    'Ride the hype: lead with the hero colorway in motion, then show quick styling combos. Use social proof from creators and early buyers, and invite UGC with a simple hashtag. Offer limited drops or early access for those who engage with colorway content. Keep CTAs playful - "Style your fit" instead of "Buy now".'
   ),
   createTopic(
     "topic-3",
@@ -161,8 +171,7 @@ const sampleTopics: Topic[] = [
         format: "image",
         cta: "See Value",
       },
-    ]
-    ,
+    ],
     "Reframe price as value: highlight durability, perks, and cost-per-use in plain language. Create side-by-side comparisons that show why it's worth it, and add a time-bound incentive (trial, bonus, or limited discount) to nudge skeptics. Target carts and lapsed visitors with reassurance-focused creative. Tone should be respectful and transparent, not defensive."
   ),
   createTopic(
@@ -205,8 +214,7 @@ const sampleTopics: Topic[] = [
         format: "single image",
         cta: "Learn More",
       },
-    ]
-    ,
+    ],
     "Lead with proof: materials, testing, and guarantees. Show behind-the-scenes clips of quality checks and real customer fixes. Offer a no-questions-asked warranty and feature support response times to build trust. Retarget complainers with a service-first CTA like “We’ll make it right” before asking for another purchase."
   ),
   createTopic(
@@ -249,8 +257,7 @@ const sampleTopics: Topic[] = [
         format: "video",
         cta: "Watch Trailer",
       },
-    ]
-    ,
+    ],
     "Build a launch runway: tease the standout benefit in a single line, then drip short reveals (design, feature, price, drop date). Give early signups a tiny perk (exclusive color, early ship, or bonus accessory). Use countdowns and reminders for people who engaged with launch posts. Keep CTAs focused on saving a spot or getting early access."
   ),
 ];
@@ -524,6 +531,12 @@ function setupMainContentObserver() {
 function restoreOriginalContent() {
   console.log("BrandPulse: Deactivating BrandPulse view");
 
+  // Show the PageFooter again when dashboard is deactivated
+  const footer = document.querySelector(".PageFooter") as HTMLElement;
+  if (footer) {
+    footer.style.display = "";
+  }
+
   // Set flag IMMEDIATELY - this must happen before React starts rendering
   isBrandPulseActive = false;
 
@@ -557,6 +570,12 @@ function restoreOriginalContent() {
 function showBrandPulseView() {
   console.log("BrandPulse: Showing BrandPulse view");
   isBrandPulseActive = true;
+
+  // Hide the PageFooter when dashboard is active
+  const footer = document.querySelector(".PageFooter") as HTMLElement;
+  if (footer) {
+    footer.style.display = "none";
+  }
 
   // Find main content container
   const mainContainer = document.querySelector(
@@ -605,6 +624,12 @@ function showBrandPulseView() {
         hiddenReactElements.push(element);
       }
     });
+
+    // Ensure footer is hidden (in case it appears dynamically)
+    const footer = document.querySelector(".PageFooter") as HTMLElement;
+    if (footer) {
+      footer.style.display = "none";
+    }
 
     // Create and append our dashboard
     const dashboardDiv = document.createElement("div");
@@ -656,11 +681,29 @@ async function fetchInsightsAndHydrate(brand?: string) {
   try {
     await stateManager.fetchInsightsFromAPI(brand);
   } catch (err) {
-    console.error("BrandPulse: Failed to fetch insights, using sample data", err);
+    console.error(
+      "BrandPulse: Failed to fetch insights, using sample data",
+      err
+    );
   }
 }
 
 function setupDashboardInteractions(dashboard: HTMLElement) {
+  // Setup back to topic button
+  const backToTopicBtn = dashboard.querySelector("#back-to-topic-btn");
+  if (backToTopicBtn) {
+    backToTopicBtn.addEventListener("click", () => {
+      const graphView = dashboard.querySelector("#view-graph") as HTMLElement;
+      const contentView = dashboard.querySelector(
+        "#content-view"
+      ) as HTMLElement;
+      if (graphView && contentView) {
+        contentView.style.display = "none";
+        graphView.style.display = "block";
+      }
+    });
+  }
+
   // Setup view tab switching (Graph, Posts, Ads, Topics)
   const viewTabButtons = dashboard.querySelectorAll(".view-tab-button");
   viewTabButtons.forEach((button) => {
@@ -687,6 +730,19 @@ function setupDashboardInteractions(dashboard: HTMLElement) {
       viewContents.forEach((content) => {
         (content as HTMLElement).style.display = "none";
       });
+
+      // Reset graph view if it was open (hide content view, show graph view)
+      const graphView = dashboard.querySelector("#view-graph") as HTMLElement;
+      const contentView = dashboard.querySelector(
+        "#content-view"
+      ) as HTMLElement;
+      if (graphView && contentView) {
+        // If content view is visible, reset to graph view
+        if (contentView.style.display === "block") {
+          contentView.style.display = "none";
+          graphView.style.display = "block";
+        }
+      }
 
       // Show selected view content
       const selectedView = dashboard.querySelector(`#view-${viewName}`);
@@ -1950,126 +2006,28 @@ function showContentView(
     // Set title
     contentTitle.textContent = "Actionable Steps & Ad Suggestions";
 
-    // Show actionable steps and ad suggestions
-    contentHTML = `
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div style="
-          background: #0f172a;
-          color: #e2e8f0;
-          border-radius: 12px;
-          padding: 20px;
-          box-shadow: 0 6px 14px rgba(15, 23, 42, 0.25);
-          line-height: 1.6;
-        ">
-          <div style="font-size: 14px; font-weight: 700; letter-spacing: 0.02em; margin-bottom: 8px; text-transform: uppercase; color: #a5b4fc;">
-            Playbook for favorability
-          </div>
-          <p style="margin: 0; font-size: 15px;">
-            ${topic.actionableStep || "We're generating a tailored playbook for this topic. Check back in a moment."}
-          </p>
-        </div>
-    `;
+    // Get brand info from insights or use defaults
+    const state = stateManager.getState();
+    const brandName = state.insights?.brand || "Tesla";
+    const brandHandle = state.insights?.brand
+      ? `@${state.insights.brand.toLowerCase()}`
+      : "@Tesla";
+    const brandAvatarUrl =
+      "https://pbs.twimg.com/profile_images/1337607516008501250/6Ggc4S5n_400x400.png";
 
-    topic.ads.forEach((ad: Ad) => {
-      const mediaBlock = ad.imageUrl
-        ? `<img src="${ad.imageUrl}" alt="${ad.title}" style="
-                width: 140px;
-                height: 140px;
-                object-fit: cover;
-                border-radius: 10px;
-                flex-shrink: 0;
-                box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-              " />`
-        : ad.videoUrl
-        ? `<video src="${ad.videoUrl}" style="
-                width: 140px;
-                height: 140px;
-                border-radius: 10px;
-                flex-shrink: 0;
-                box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-              " controls muted></video>`
-        : `<div style="
-                width: 140px;
-                height: 140px;
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 13px;
-                font-weight: 600;
-                flex-shrink: 0;
-                box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-              ">Image/Video</div>`;
+    // Clear content body and use AdCard components
+    contentBody.innerHTML = "";
 
-      contentHTML += `
-          <div class="ad-suggestion" style="
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 2px solid #3b82f6;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(59, 130, 246, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(59, 130, 246, 0.1)'">
-            <div style="display: flex; gap: 20px; margin-bottom: 16px;">
-              ${mediaBlock}
-              <div style="flex: 1;">
-                <h4 style="
-                  font-size: 18px;
-                  font-weight: 700;
-                  margin: 0 0 12px 0;
-                  color: #1e40af;
-                ">${ad.title}</h4>
-                <div style="
-                  font-size: 14px;
-                  color: #1e3a8a;
-                  margin-bottom: 16px;
-                  line-height: 1.6;
-                ">
-                  <div style="margin-bottom: 6px;"><strong>Target:</strong> ${ad.target}</div>
-                  <div style="margin-bottom: 6px;"><strong>Format:</strong> ${ad.format}</div>
-                  <div><strong>CTA:</strong> "${ad.cta}"</div>
-                </div>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                  <label style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                    color: #1e40af;
-                    cursor: pointer;
-                    padding: 8px 12px;
-                    background: white;
-                    border-radius: 6px;
-                    border: 1px solid #3b82f6;
-                  ">
-                    <input type="checkbox" style="cursor: pointer; width: 16px; height: 16px;">
-                    Use in campaign
-                  </label>
-                  <label style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                    color: #1e40af;
-                    cursor: pointer;
-                    padding: 8px 12px;
-                    background: white;
-                    border-radius: 6px;
-                    border: 1px solid #3b82f6;
-                  ">
-                    <input type="checkbox" style="cursor: pointer; width: 16px; height: 16px;">
-                    Generate variations
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+    // Create ad cards for all ads in this topic
+    const adCards = topic.ads.map((ad) => ({ ad, topic }));
+    const adCardContainer = createAdCardContainer(adCards, {
+      brandName,
+      brandHandle,
+      brandAvatarUrl,
     });
 
-    contentHTML += `</div>`;
+    contentBody.appendChild(adCardContainer);
+    return;
   } else if (nodeType === "analysis") {
     // Set title
     contentTitle.textContent = "Sentiment Analysis";
@@ -2166,21 +2124,6 @@ function showContentView(
   }
 
   contentBody.innerHTML = contentHTML;
-
-  // Setup back button to return to topic view
-  const backBtn = dashboard.querySelector("#back-to-topic-btn");
-  if (backBtn) {
-    // Remove existing listeners
-    const newBackBtn = backBtn.cloneNode(true) as HTMLElement;
-    backBtn.parentNode?.replaceChild(newBackBtn, backBtn);
-
-    newBackBtn.addEventListener("click", () => {
-      // Hide content view, show graph view
-      contentView.style.display = "none";
-      graphView.style.display = "block";
-      // Don't reset the graph - keep it at the topic view
-    });
-  }
 }
 
 // Setup click handlers for tab view items to open content view
@@ -2276,37 +2219,28 @@ function populateAdsView(dashboard: HTMLElement) {
     });
   });
 
-  let adsHTML = "";
-  allAds.forEach(({ ad }) => {
-    const imageSection = ad.imageUrl
-      ? `<div style="flex-shrink:0;"><img src="${ad.imageUrl}" alt="${ad.title}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e1e8ed;" /></div>`
-      : "";
+  // Get brand info from insights or use defaults
+  const brandName = state.insights?.brand || "Tesla";
+  const brandHandle = state.insights?.brand
+    ? `@${state.insights.brand.toLowerCase()}`
+    : "@Tesla";
+  const brandAvatarUrl =
+    "https://pbs.twimg.com/profile_images/1337607516008501250/6Ggc4S5n_400x400.png";
 
-    adsHTML += `
-      <div class="list-item" style="
-        padding: 16px;
-        border-bottom: 1px solid #e1e8ed;
-        cursor: pointer;
-        display:flex;
-        gap:12px;
-        align-items:center;
-      " onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='#ffffff'">
-        ${imageSection}
-        <div style="font-size: 14px; color: #14171a; margin-bottom: 8px; font-weight: 500;">
-          ${ad.title}
-        </div>
-        <div style="font-size: 12px; color: #657786; display: flex; gap: 16px; margin-bottom: 8px;">
-          <span>${ad.format}</span>
-          <span>Target: ${ad.target}</span>
-        </div>
-        <div style="font-size: 12px; color: #667eea; font-weight: 500;">
-          CTA: "${ad.cta}"
-        </div>
-      </div>
-    `;
+  // Clear existing content
+  adsView.innerHTML = "";
+
+  // Create ad card container
+  const adCardContainer = createAdCardContainer(allAds, {
+    brandName,
+    brandHandle,
+    brandAvatarUrl,
+    onClick: (ad, topic) => {
+      showContentView(dashboard, "actionable-steps", topic);
+    },
   });
 
-  adsView.innerHTML = adsHTML;
+  adsView.appendChild(adCardContainer);
 
   // Re-setup click handlers
   setupTabViewItemHandlers(dashboard);
@@ -2537,7 +2471,10 @@ function showTopicDetail(dashboard: HTMLElement, topic: Topic) {
             Playbook
           </div>
           <div style="font-size: 14px;">
-            ${topic.actionableStep || "We're preparing an actionable playbook for this topic."}
+            ${
+              topic.actionableStep ||
+              "We're preparing an actionable playbook for this topic."
+            }
           </div>
         </div>
   `;

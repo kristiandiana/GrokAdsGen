@@ -39,8 +39,8 @@ export function addToHistory(topics: string[]) {
   // Keep only unique, normalized topics
   const uniqueTopics = Array.from(new Set(updatedTopics.map(t => t.toLowerCase().trim())));
   
-  // Keep last 20 topics to avoid stale history blocking everything forever
-  const limitedTopics = uniqueTopics.slice(0, 20);
+  // Keep last 10 topics to avoid stale history blocking everything forever
+  const limitedTopics = uniqueTopics.slice(0, 10);
 
   const newHistory = {
     ...history,
