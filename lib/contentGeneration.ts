@@ -46,12 +46,16 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
 
         Rules:
         - Match the brand's voice 100% from the tweets
-        - Match the brand's VISUAL STYLE for image prompts
+        - Match the brand's VISUAL STYLE for image prompts${
+          visualAnalysis.consolidatedStyle
+            ? ` - incorporate the lighting, color palette, mood, and composition from the Visual Style Guide above`
+            : ""
+        }
         - Vary objectives: one awareness, one engagement, one conversions, one retention
         - Format: single_image (1024x1024)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
         - Image prompt must be impactful, realistic, clean/sleek, and with copywriting
-        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood)
+        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood, composition)
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -62,7 +66,13 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions" | "retention",
-              "image_prompt": string (detailed, high-quality visual description matching style guide)
+              "image_prompt": string (detailed, high-quality visual description${
+                visualAnalysis.consolidatedStyle
+                  ? ` matching the visual style: ${visualAnalysis.consolidatedStyle
+                      .replace("Visual Style Pattern: ", "")
+                      .substring(0, 150)}`
+                  : " with professional composition"
+              })
             },
             ... (exactly 4 items)
           ]
@@ -208,33 +218,40 @@ export async function generateVideoAdIdeas(
         ${visualStyleContext}
         ${suggestionContext}
 
-        You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}${
-    brand_handle.toLowerCase().includes("tesla")
-      ? " (the electric vehicle and clean energy company known for Tesla cars, Model Y, Model 3, Cybertruck, and electric vehicles)"
-      : ""
-  }.
+        You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
         Generate exactly 3 video ad ideas that directly address the suggestion above.
 
         Rules:
         - Match the brand's voice 100% from the tweets
-        - Match the brand's VISUAL STYLE for video prompts
+        - Match the brand's VISUAL STYLE for video prompts${
+          visualAnalysis.consolidatedStyle
+            ? ` - incorporate the lighting, color palette, mood, and composition from the Visual Style Guide above`
+            : ""
+        }
         - Vary objectives: one awareness, one engagement, one conversions
         - Format: video (16:9 aspect ratio recommended)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
         
         CRITICAL VIDEO PROMPT GUIDELINES (for best quality output):
-        - Video prompts should be SIMPLE and FOCUSED - avoid complex scenes with multiple moving elements
+        ${
+          visualAnalysis.consolidatedStyle
+            ? `- CRITICAL: Video prompts MUST match the brand's visual style: ${visualAnalysis.consolidatedStyle
+                .replace("Visual Style Pattern: ", "")
+                .substring(0, 300)}\n        `
+            : ""
+        }- Video prompts should be SIMPLE and FOCUSED - avoid complex scenes with multiple moving elements
         - Use MINIMAL MOTION: prefer slow, subtle camera movements (gentle pan, slow zoom, or static shot)
+        - Incorporate the brand's visual aesthetic: ${
+          visualAnalysis.consolidatedStyle
+            ? "match the lighting, color palette, mood, and composition from the visual style guide above"
+            : "use professional, cinematic composition"
+        }
         - Avoid: fast movements, multiple subjects moving, complex action sequences, rapid transitions
         - Prefer: single subject, slow camera movement, cinematic lighting, professional composition
         - Keep prompts to 1-2 sentences maximum - be concise and specific
         - Focus on ONE clear visual: a product, a scene, or a single action
         - Use descriptive but simple language: "slow camera pan", "gentle zoom", "static shot with subtle lighting"
-        - ${
-          brand_handle.toLowerCase().includes("tesla")
-            ? "IMPORTANT: Video prompts MUST feature Tesla electric vehicles, Tesla cars, Tesla models, or Tesla technology. Examples: 'A Tesla Model Y in a static shot with cinematic lighting', 'Slow camera pan across a Tesla Model 3', 'Tesla Cybertruck in a professional product showcase with minimal motion'. Make it clear these are Tesla car advertisements."
-            : "Video prompts should be specific to the brand and product."
-        }
+        - Video prompts should be specific to the brand and product.
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -245,7 +262,13 @@ export async function generateVideoAdIdeas(
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions",
-              "video_prompt": string (1-2 sentences, simple and focused, minimal motion - use slow camera movements or static shots, avoid complex scenes)
+              "video_prompt": string (1-2 sentences, simple and focused, minimal motion${
+                visualAnalysis.consolidatedStyle
+                  ? ` - incorporate the brand's visual style: ${visualAnalysis.consolidatedStyle
+                      .replace("Visual Style Pattern: ", "")
+                      .substring(0, 150)}`
+                  : ""
+              } - use slow camera movements or static shots, avoid complex scenes)
             },
             ... (exactly 3 items)
           ]

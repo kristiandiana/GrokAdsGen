@@ -35,7 +35,8 @@ export async function callGrok(
   jsonMode = true,
   temperature = 0
 ) {
-  const response = await client.chat.completions.create({
+  const grokClient = getClient();
+  const response = await grokClient.chat.completions.create({
     model,
     messages: [{ role: "user", content: prompt }],
     temperature,
