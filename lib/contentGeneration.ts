@@ -1,5 +1,6 @@
 import { callGrok, generateImage } from "./grokClient";
 import { generateVideo } from "./pikaClient";
+import { analyzeBrandVisuals } from "./visionAnalysis"; 
 import type {
   Suggestion,
   BrandVoiceTweet,
@@ -19,6 +20,12 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
 }> {
   const { suggestion, voice_samples, brand_handle } = input;
 
+  const allMedia = voice_samples.flatMap(v => v.media || []);
+  const visualAnalysis = await analyzeBrandVisuals(allMedia);
+  const visualStyleContext = visualAnalysis.consolidatedStyle 
+    ? `\nVISUAL STYLE GUIDE (Must match this aesthetic): ${visualAnalysis.consolidatedStyle}\n`
+    : '';
+
   const voiceContext =
     voice_samples.length > 0
       ? `Brand's exact tone and style from recent tweets (MUST MATCH THIS VOICE):\n${voice_samples
@@ -30,6 +37,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
   const suggestionContext = `ACTION TO TAKE:\nTitle: ${suggestion.title}\nRationale: ${suggestion.rationale}\nTopic: ${suggestion.topic}\nPriority: ${suggestion.priority}\nTone: ${suggestion.tone}\nExample tweet: "${suggestion.suggested_copy}"`;
 
   const prompt = `${voiceContext}
+        ${visualStyleContext} 
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
@@ -37,6 +45,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
 
         Rules:
         - Match the brand's voice 100% from the tweets
+        - Match the brand's VISUAL STYLE for image prompts
         - Vary objectives: one awareness, one engagement, one conversions, one retention
         - Format: single_image (1024x1024)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags

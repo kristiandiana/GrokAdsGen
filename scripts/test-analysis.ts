@@ -1,4 +1,4 @@
-import { analyzeMentions } from '../lib/analysis';
+import { analyzeMentions } from '../lib/sentimentAnalysis';
 import type { PublicMentionTweet, BrandVoiceTweet } from '../lib/types/tweet';
 
 const mentions: PublicMentionTweet[] = [

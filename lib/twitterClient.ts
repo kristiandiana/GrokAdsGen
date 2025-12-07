@@ -5,7 +5,7 @@ import {
 
 import { buildQuery } from "./queryStrategies";
 
-const BEARER_TOKEN = process.env.X_BEARER_TOKEN;
+const BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN || process.env.X_BEARER_TOKEN;
 
 const BASE_URL = "https://api.twitter.com/2/tweets/search/recent";
 
@@ -21,11 +21,14 @@ export async function searchPublicMentions(brand: string, limit = 20) {
 // 🔥 NEW: Fetch tweets *by the brand itself*
 export async function searchBrandVoiceTweets(brand: string, limit = 20) {
   const brandVoiceQuery = `from:${brand} -is:retweet lang:en`;
-  const url = `${BASE_URL}?tweet.fields=public_metrics,created_at&max_results=${limit}&query=${encodeURIComponent(
-    brandVoiceQuery
-  )}`;
+  const url = `${BASE_URL}?` +
+    `query=${encodeURIComponent(brandVoiceQuery)}` +
+    `&max_results=${limit}` +
+    `&tweet.fields=public_metrics,created_at,attachments` +
+    `&expansions=attachments.media_keys` +
+    `&media.fields=type,url,preview_image_url,alt_text,width,height,duration_ms,variants`;
 
-  return fetchTweets<BrandVoiceTweet>(url);
+  return fetchTweetsWithMedia(url);
 }
 
 export async function searchBrandVisualPosts(brand: string, limit = 20) {
