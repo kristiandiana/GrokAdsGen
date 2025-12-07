@@ -11,7 +11,7 @@ export function createPostCardContainer(
   options: PostCardOptions = {}
 ): HTMLElement {
   const container = document.createElement("div");
-  container.style.background = "transparent";
+  container.style.background = "#ffffff";
   container.style.color = "#0f172a";
   container.style.padding = "12px";
   container.style.borderRadius = "12px";
@@ -21,7 +21,7 @@ export function createPostCardContainer(
 
   posts.forEach(({ post, topic }) => {
     const card = document.createElement("div");
-    card.style.background = "#f8fafc";
+    card.style.background = "#ffffff";
     card.style.border = "1px solid #e2e8f0";
     card.style.borderRadius = "12px";
     card.style.padding = "12px";
@@ -41,18 +41,9 @@ export function createPostCardContainer(
     header.style.fontSize = "13px";
     header.style.color = "#475569";
 
-    const author = document.createElement("div");
-    author.style.display = "flex";
-    author.style.gap = "6px";
-    author.style.alignItems = "center";
-    author.innerHTML = `<span style="color:#0f172a;font-weight:600;">${escapeHtml(
-      post.author || "Unknown"
-    )}</span>`;
-
     const time = document.createElement("span");
     time.textContent = post.timestamp || "";
 
-    header.appendChild(author);
     header.appendChild(time);
 
     const body = document.createElement("div");
