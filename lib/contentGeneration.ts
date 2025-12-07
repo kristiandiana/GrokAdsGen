@@ -1,6 +1,6 @@
 import { callGrok, generateImage } from "./grokClient";
 import { generateVideo } from "./pikaClient";
-import { analyzeBrandVisuals } from "./visionAnalysis"; 
+import { analyzeBrandVisuals } from "./visionAnalysis";
 import type {
   Suggestion,
   BrandVoiceTweet,
@@ -20,11 +20,12 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
 }> {
   const { suggestion, voice_samples, brand_handle } = input;
 
-  const allMedia = voice_samples.flatMap(v => v.media || []);
+  // 1. Analyze Visual Style (if any voice samples have images)
+  const allMedia = voice_samples.flatMap((v) => v.media || []);
   const visualAnalysis = await analyzeBrandVisuals(allMedia);
-  const visualStyleContext = visualAnalysis.consolidatedStyle 
+  const visualStyleContext = visualAnalysis.consolidatedStyle
     ? `\nVISUAL STYLE GUIDE (Must match this aesthetic): ${visualAnalysis.consolidatedStyle}\n`
-    : '';
+    : "";
 
   const voiceContext =
     voice_samples.length > 0
@@ -50,6 +51,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         - Format: single_image (1024x1024)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
         - Image prompt must be impactful, realistic, clean/sleek, and with copywriting
+        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood)
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -60,7 +62,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions" | "retention",
-              "image_prompt": string (detailed, high-quality visual description)
+              "image_prompt": string (detailed, high-quality visual description matching style guide)
             },
             ... (exactly 4 items)
           ]
@@ -120,6 +122,14 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
           ...imageData,
           ad_idea_id: ad.id,
         });
+        if (imageData?.image_url) {
+          console.log(
+            "[BrandPulse][ads] image generated",
+            ad.id,
+            "url:",
+            imageData.image_url
+          );
+        }
       } catch (err) {
         console.error(`Failed to generate image for ad ${ad.id}:`, err);
         // Continue with next ad
@@ -176,6 +186,13 @@ export async function generateVideoAdIdeas(
     waitForCompletion = false,
   } = input;
 
+  // 1. Analyze Visual Style (if any voice samples have images)
+  const allMedia = voice_samples.flatMap((v) => v.media || []);
+  const visualAnalysis = await analyzeBrandVisuals(allMedia);
+  const visualStyleContext = visualAnalysis.consolidatedStyle
+    ? `\nVISUAL STYLE GUIDE (Must match this aesthetic): ${visualAnalysis.consolidatedStyle}\n`
+    : "";
+
   // First generate ad ideas (similar to generateAdIdeas but for video format)
   const voiceContext =
     voice_samples.length > 0
@@ -188,6 +205,7 @@ export async function generateVideoAdIdeas(
   const suggestionContext = `ACTION TO TAKE:\nTitle: ${suggestion.title}\nRationale: ${suggestion.rationale}\nTopic: ${suggestion.topic}\nPriority: ${suggestion.priority}\nTone: ${suggestion.tone}\nExample tweet: "${suggestion.suggested_copy}"`;
 
   const prompt = `${voiceContext}
+        ${visualStyleContext}
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}${
@@ -199,6 +217,7 @@ export async function generateVideoAdIdeas(
 
         Rules:
         - Match the brand's voice 100% from the tweets
+        - Match the brand's VISUAL STYLE for video prompts
         - Vary objectives: one awareness, one engagement, one conversions
         - Format: video (16:9 aspect ratio recommended)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
@@ -300,6 +319,14 @@ export async function generateVideoAdIdeas(
           ad.video_url = result.video_url;
           ad.video_status = "completed";
 
+          if (result?.video_url) {
+            console.log(
+              "[BrandPulse][ads] video generated",
+              ad.id,
+              "url:",
+              result.video_url
+            );
+          }
           videos.push({
             ad_idea_id: ad.id,
             video_id: result.video_id,
@@ -325,6 +352,15 @@ export async function generateVideoAdIdeas(
             video_id: videoResponse.video_id,
             status: videoResponse.status,
           });
+
+          if (videoResponse?.video_id) {
+            console.log(
+              "[BrandPulse][ads] video async generated",
+              ad.id,
+              "id:",
+              videoResponse.video_id
+            );
+          }
         }
       } catch (err) {
         console.error(`Failed to generate video for ad ${ad.id}:`, err);
