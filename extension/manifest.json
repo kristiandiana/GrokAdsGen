@@ -7,7 +7,8 @@
   "host_permissions": [
     "https://ads.twitter.com/*",
     "https://ads.x.com/*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "https://v3b.fal.media/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js"
