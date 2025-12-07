@@ -4,6 +4,7 @@ import { Network, Data, Options, Node, Edge } from "vis-network";
 import { DataSet } from "vis-data";
 import "../styles/tailwind.css";
 import { Topic, Post, Ad, Sentiment, Prominence, AdFormat } from "../types";
+import { stateManager } from "../store/state";
 
 console.log("BrandPulse Extension: Content script loaded");
 
@@ -597,6 +598,35 @@ function showBrandPulseView() {
     dashboardDiv.id = "brandpulse-dashboard";
     dashboardDiv.innerHTML = createBrandPulseUI();
     mainContainer.appendChild(dashboardDiv);
+
+    // Initialize state manager with sample data (will be replaced with API data)
+    stateManager.setTopics(sampleTopics);
+
+    // Subscribe to state changes to update UI reactively
+    stateManager.subscribe((state) => {
+      // Re-populate views when state changes
+      const dashboard = document.getElementById("brandpulse-dashboard");
+      if (dashboard) {
+        // Only update if the view is currently visible
+        const activeView = dashboard.querySelector(
+          ".view-content[style*='block']"
+        );
+        if (activeView) {
+          const viewId = activeView.id;
+          if (viewId === "view-posts") {
+            populatePostsView(dashboard as HTMLElement);
+          } else if (viewId === "view-ads") {
+            populateAdsView(dashboard as HTMLElement);
+          } else if (viewId === "view-topics") {
+            populateTopicsView(dashboard as HTMLElement);
+          }
+        }
+        // Re-initialize graph if graph view is active
+        if (activeView?.id === "view-graph") {
+          initializeGraphView(dashboard as HTMLElement);
+        }
+      }
+    });
 
     // Initialize graph view
     initializeGraphView(dashboardDiv);
@@ -1334,8 +1364,11 @@ function createBrandPulseUI(): string {
 }
 
 function initializeGraphView(dashboard: HTMLElement) {
-  const cyContainer = dashboard.querySelector("#cy") as HTMLElement;
+  const cyContainer = dashboard.querySelector("#view-graph #cy") as HTMLElement;
   if (!cyContainer) return;
+
+  // Get topics from state manager
+  const topics = stateManager.getTopics();
 
   // Calculate center position
   const centerX = cyContainer.offsetWidth / 2;
@@ -1347,10 +1380,7 @@ function initializeGraphView(dashboard: HTMLElement) {
   const minRadius = 200;
   const maxRadius =
     Math.min(cyContainer.offsetWidth, cyContainer.offsetHeight) * 0.35;
-  const radius = Math.min(
-    minRadius + (sampleTopics.length - 4) * 20,
-    maxRadius
-  );
+  const radius = Math.min(minRadius + (topics.length - 4) * 20, maxRadius);
 
   // Create nodes array
   const nodes: Node[] = [
@@ -1372,7 +1402,7 @@ function initializeGraphView(dashboard: HTMLElement) {
       y: centerY,
     },
     // Topic nodes - evenly spaced around the center
-    ...sampleTopics.map((topic, index) => {
+    ...topics.map((topic, index) => {
       const prominence = topic.prominence;
       const width =
         prominence === "high" ? 160 : prominence === "medium" ? 140 : 120;
@@ -1408,7 +1438,7 @@ function initializeGraphView(dashboard: HTMLElement) {
   ];
 
   // Create edges array
-  const edges: Edge[] = sampleTopics.map((topic) => ({
+  const edges: Edge[] = topics.map((topic) => ({
     id: `edge-${topic.id}`,
     from: "brandpulse",
     to: topic.id,
@@ -2307,9 +2337,10 @@ function setupTabViewItemHandlers(dashboard: HTMLElement) {
   // Setup topic item clicks
   const topicItems = dashboard.querySelectorAll("#view-topics .list-item");
   topicItems.forEach((item, index) => {
-    if (index < sampleTopics.length) {
+    const topics = stateManager.getTopics();
+    if (index < topics.length) {
       item.addEventListener("click", () => {
-        const topic = sampleTopics[index];
+        const topic = topics[index];
         showTopicDetail(dashboard, topic);
       });
     }
@@ -2320,9 +2351,11 @@ function populatePostsView(dashboard: HTMLElement) {
   const postsView = dashboard.querySelector("#view-posts > div");
   if (!postsView) return;
 
-  // Find all posts from all topics
+  // Get posts from state manager
+  const state = stateManager.getState();
   const allPosts: { post: Post; topic: Topic }[] = [];
-  sampleTopics.forEach((topic) => {
+
+  state.topics.forEach((topic) => {
     topic.posts.forEach((post) => {
       allPosts.push({ post, topic });
     });
@@ -2370,9 +2403,11 @@ function populateAdsView(dashboard: HTMLElement) {
   const adsView = dashboard.querySelector("#view-ads > div");
   if (!adsView) return;
 
-  // Find all ads from all topics
+  // Get ads from state manager
+  const state = stateManager.getState();
   const allAds: { ad: Ad; topic: Topic }[] = [];
-  sampleTopics.forEach((topic) => {
+
+  state.topics.forEach((topic) => {
     topic.ads.forEach((ad) => {
       allAds.push({ ad, topic });
     });
@@ -2410,8 +2445,9 @@ function populateTopicsView(dashboard: HTMLElement) {
   const topicsView = dashboard.querySelector("#view-topics > div");
   if (!topicsView) return;
 
-  // Sort topics by prominence and mention count
-  const sortedTopics = [...sampleTopics].sort((a, b) => {
+  // Get topics from state manager and sort by prominence and mention count
+  const topics = stateManager.getTopics();
+  const sortedTopics = [...topics].sort((a, b) => {
     const prominenceOrder = { high: 3, medium: 2, low: 1 };
     if (prominenceOrder[a.prominence] !== prominenceOrder[b.prominence]) {
       return prominenceOrder[b.prominence] - prominenceOrder[a.prominence];
