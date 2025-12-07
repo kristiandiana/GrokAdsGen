@@ -23,55 +23,67 @@ async function runTeslaPipeline() {
     console.log(`   Rationale: ${topSuggestion.rationale}`);
 
     // 2. Generate Content & Strategy
-    console.log("\n🧠 Phase 2: Generating Content & Ad Strategy...");
-    const creativeResult = await generateAdIdeas({
-        suggestion: topSuggestion,
-        voice_samples: insights.brand_voice,
-        brand_handle: BRAND
-    });
+    // Note: Content generation is now handled inside buildBrandInsights (in Phase 1) to support multiple topics.
+    // We just need to check the results.
+    console.log(`\n🧠 Phase 2: Content Generated (Ads: ${insights.generated_ads?.length || 0}, Images: ${insights.generated_images?.length || 0})`);
 
     // 3. Output the Resulting Data Model
     console.log("\n✅ Phase 3: Generated Ad Group Models:");
     
+    // Log the actual keywords that triggered the generation
+    if (insights.analysis && insights.analysis.topicSummaries) {
+        console.log("\n🔑 Consolidate Keywords Used:");
+        insights.analysis.topicSummaries.slice(0, 8).forEach(t => {
+            console.log(`   - ${t.topic} (Count: ${t.total})`);
+        });
+    }
+
     const outputData: any = {
         timestamp: new Date().toISOString(),
         brand: BRAND,
-        suggestion: topSuggestion,
-        ads: []
+        strategies: []
     };
 
-    creativeResult.ads.forEach((ad, i) => {
-        // Construct the full API data model
-        const apiModel = {
-            campaign: {
-                name: `[GrokAds] ${ad.headline}`,
-                daily_budget_micros: 1000000,
-                objective: ad.objective === 'awareness' ? 'AWARENESS' : 'TWEET_ENGAGEMENTS',
-                entity_status: 'PAUSED'
-            },
-            line_item: {
-                name: `Targeting: ${ad.targeting?.keywords?.slice(0,2).join(' ')}`,
-                product_type: "PROMOTED_TWEETS",
-                placements: ['ALL_ON_TWITTER'],
-                objective: ad.objective === 'awareness' ? 'AWARENESS' : 'TWEET_ENGAGEMENTS',
-                bid_strategy: ad.bid_strategy,
-                bid_amount_micros: ad.bid_strategy === 'AUTO' ? null : ad.target_bid,
-                entity_status: 'PAUSED',
-                targeting_criteria: ad.targeting
-            },
-            creative: {
-                headline: ad.headline,
-                body: ad.body,
-                media_url: creativeResult.images.find(img => img.ad_idea_id === ad.id)?.image_url,
-                prompt_used: ad.image_prompt
-            }
-        };
-        
-        outputData.ads.push(apiModel);
+    if (insights.generated_ad_groups && insights.generated_ad_groups.length > 0) {
+        insights.generated_ad_groups.forEach((adGroup) => {
+             // Find matching suggestion
+             const suggestion = insights.suggestions.find(s => s.id === adGroup.suggestion_id) || insights.suggestions[0];
 
-        console.log(`\n--- Ad Idea #${i + 1} ---`);
-        console.log(JSON.stringify(apiModel, null, 2));
-    });
+             // Find ads for this group
+             const groupAds = insights.generated_ads?.filter(ad => adGroup.ads.some(ga => ga.id === ad.id)) || [];
+
+             const strategyModel = {
+                suggestion_topic: suggestion.topic,
+                suggestion_title: suggestion.title,
+                campaign: {
+                    name: `[GrokAds] ${suggestion.topic}`,
+                    daily_budget_micros: 1000000,
+                    objective: 'AWARENESS',
+                    entity_status: 'PAUSED'
+                },
+                line_item: {
+                    name: adGroup.name,
+                    product_type: "PROMOTED_TWEETS",
+                    placements: ['ALL_ON_TWITTER'],
+                    objective: 'AWARENESS',
+                    bid_strategy: adGroup.bid_strategy,
+                    bid_amount_micros: adGroup.bid_strategy === 'AUTO' ? null : adGroup.target_bid,
+                    entity_status: 'PAUSED',
+                    targeting_criteria: adGroup.targeting
+                },
+                creatives: groupAds.map(ad => ({
+                    headline: ad.headline,
+                    body: ad.body,
+                    media_url: insights.generated_images?.find(img => img.ad_idea_id === ad.id)?.image_url,
+                    prompt_used: ad.image_prompt,
+                    call_to_action: ad.call_to_action
+                }))
+            };
+            outputData.strategies.push(strategyModel);
+        });
+    }
+
+    console.log(JSON.stringify(outputData, null, 2));
 
     // Save to file
     const outputPath = path.resolve(process.cwd(), "ad_strategy_output.json");

@@ -110,6 +110,21 @@ export type PublicMentionTweet = {
     };
   };
 
+  export type AdGroup = {
+    id: string;
+    name: string;
+    suggestion_id: string;
+    bid_strategy: 'AUTO' | 'MAX' | 'TARGET';
+    target_bid: number; // In micro-currency
+    targeting: {
+      keywords: string[];
+      interests: string[];
+      locations?: string[];
+      gender?: 'Male' | 'Female' | 'Any';
+    };
+    ads: AdIdea[];
+  };
+
   export type VideoAdIdea = AdIdea & {
     video_prompt: string;
     video_url?: string;

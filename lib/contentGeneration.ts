@@ -1,12 +1,13 @@
 import { callGrok, generateImage } from "./grokClient";
-import { generateVideo } from "./pikaClient";
+// import { generateVideo } from "./pikaClient"; // Disable pika import
 import { analyzeBrandVisuals } from "./visionAnalysis";
 import type {
   Suggestion,
   BrandVoiceTweet,
   AdIdea,
   GeneratedImage,
-  VideoAdIdea
+  VideoAdIdea,
+  AdGroup
 } from "./types/tweet";
 
 interface GenerateAdsInput {
@@ -17,6 +18,7 @@ interface GenerateAdsInput {
 
 export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
   ads: AdIdea[];
+  adGroup: AdGroup;
   images: GeneratedImage[];
 }> {
   const { suggestion, voice_samples, brand_handle } = input;
@@ -35,16 +37,18 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
-        Generate exactly 2 promotable ad ideas that directly address the suggestion above.
+        Generate an Ad Group Strategy and exactly 3 promotable ad ideas that directly address the suggestion above.
 
         Rules:
         - Match the brand's voice 100% from the tweets
         - Match the brand's VISUAL STYLE for image prompts
-        - Vary objectives: one awareness, one engagement (or conversions)
+        - Vary objectives if meaningful, but consistent targeting for the group
         - Format: single_image (1024x1024)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
         - Image prompt must be **PHOTOREALISTIC**, cinematic, and high-fidelity. 
-        - AVOID: "AI sheen", "cartoonish", "over-saturated", "generic illustration".
+        - AVOID: "AI sheen", "cartoonish", "over-saturated", "generic illustration", "rainbow colors", "neon", "fantasy colors", "excessive vibrancy".
+        - **CRITICAL**: Product colors must be realistic and standard factory options (e.g. no rainbow cars, no unnatural skins).
+        - **CRITICAL**: Lighting should be natural or studio-professional, avoiding excessive saturation.
         - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood)
         - If Visual Style Guide says "grainy/film", explicitly ask for "film grain, shot on 35mm".
         - If Visual Style Guide says "minimalist", explicitly ask for "clean composition, negative space".
@@ -52,6 +56,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         New: Visual Variety Requirements (Must be distinct for each ad):
         - Ad 1: Macro/Close-up product shot (high detail)
         - Ad 2: Wide environmental/lifestyle shot (context)
+        - Ad 3: Creative concept or human element (user interaction)
         
         New: Copy Adherence Requirement:
         - The image prompt MUST include the key noun/subject from the headline.
@@ -64,19 +69,29 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
           * Example: If headline says "Precision", background is clean/geometric studio.
         - STYLE: Must be 80% based on the "Visual Style Guide" provided above, and 20% creative adaptation to the new copy.
         
-        New: Recommend a bidding strategy and target bid (in micro-currency).
+        New: Define Ad Group Level Strategy (Applied to all ads):
         - bid_strategy: 'AUTO' | 'MAX' | 'TARGET'
         - Logic:
           * Use 'AUTO' for Awareness objectives (lowest cost).
           * Use 'MAX' for Engagement/Conversions (get volume).
           * Use 'TARGET' only if you want to control CPA strictly.
         - target_bid: number (e.g. 500000 for $0.50). Set to 0 if AUTO.
-        
-        New: Recommend basic targeting criteria.
         - targeting: { keywords: string[], interests: string[] }
+
+        CRITICAL: Ensure VARIETY. Each generated ad model must be unique and different from previous runs if possible.
+        Focus on specific nuances of the topic "${suggestion.topic}".
 
         Return ONLY a JSON object with this exact structure:
         {
+          "ad_group": {
+            "name": string (descriptive name for this group of ads),
+            "bid_strategy": "AUTO" | "MAX" | "TARGET",
+            "target_bid": number,
+            "targeting": {
+              "keywords": string[],
+              "interests": string[]
+            }
+          },
           "ads": [
             {
               "headline": string,
@@ -84,15 +99,9 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions",
-              "image_prompt": string (detailed, high-quality visual description matching style guide),
-              "bid_strategy": "AUTO" | "MAX" | "TARGET",
-              "target_bid": number,
-              "targeting": {
-                "keywords": string[],
-                "interests": string[]
-              }
+              "image_prompt": string (detailed, high-quality visual description matching style guide)
             },
-            ... (exactly 2 items)
+            ... (exactly 3 items)
           ]
         }
 
@@ -102,14 +111,20 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
     const result = await callGrok(prompt, "grok-4-1-fast-reasoning", true, 0.7); // Higher temp for creativity
 
     let rawAds: any[] = [];
+    let adGroupData: any = {};
+
     if (result && typeof result === "object") {
-      if ("ads" in result && Array.isArray((result as any).ads)) {
-        rawAds = (result as any).ads;
-      } else if (Array.isArray(result)) {
+        if ("ad_group" in result) {
+            adGroupData = result.ad_group;
+        }
+        if ("ads" in result && Array.isArray((result as any).ads)) {
+            rawAds = (result as any).ads;
+        }
+    }
+
+    // Fallback if structure is wrong but array exists (rare with Grok-Reasoning but possible)
+    if (rawAds.length === 0 && Array.isArray(result)) {
         rawAds = result;
-      } else {
-        rawAds = [result];
-      }
     }
 
     const validAds: AdIdea[] = rawAds
@@ -126,7 +141,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
           typeof ad.image_prompt === "string" &&
           ad.image_prompt.length > 50
       )
-      .slice(0, 2)
+      .slice(0, 3)
       .map((ad, i) => ({
         id: `ad-${suggestion.id}-${i + 1}`,
         headline: ad.headline.trim(),
@@ -139,10 +154,21 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         suggested_tweet_text: `${ad.headline}\n\n${ad.body}\n\n${
           ad.call_to_action
         } ${ad.hashtags.join(" ")}`.trim(),
-        bid_strategy: ad.bid_strategy || 'AUTO',
-        target_bid: ad.target_bid || 1000000,
-        targeting: ad.targeting || { keywords: [], interests: [] }
+        // Inherit from group or default
+        bid_strategy: adGroupData.bid_strategy || ad.bid_strategy || 'AUTO',
+        target_bid: adGroupData.target_bid || ad.target_bid || 1000000,
+        targeting: adGroupData.targeting || ad.targeting || { keywords: [], interests: [] }
       }));
+
+    const adGroup: AdGroup = {
+        id: `group-${suggestion.id}`,
+        name: adGroupData.name || `Ad Group: ${suggestion.topic}`,
+        suggestion_id: suggestion.id,
+        bid_strategy: adGroupData.bid_strategy || 'AUTO',
+        target_bid: adGroupData.target_bid || 1000000,
+        targeting: adGroupData.targeting || { keywords: [], interests: [] },
+        ads: validAds
+    };
 
     const images: GeneratedImage[] = [];
     for (const ad of validAds) {
@@ -169,12 +195,22 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
 
     return {
       ads: validAds,
+      adGroup,
       images,
     };
   } catch (err) {
     console.error("Failed to generate ad ideas:", err);
     return {
       ads: [],
+      adGroup: {
+          id: 'error',
+          name: 'Error',
+          suggestion_id: suggestion.id,
+          bid_strategy: 'AUTO',
+          target_bid: 0,
+          targeting: { keywords: [], interests: [] },
+          ads: []
+      },
       images: [],
     };
   }
@@ -192,6 +228,7 @@ interface GenerateVideoAdsInput {
  * @param input - Input containing suggestion, voice samples, and brand handle
  * @returns Promise with video ad ideas and their generated videos
  */
+/*
 export async function generateVideoAdIdeas(
   input: GenerateVideoAdsInput
 ): Promise<{
@@ -204,6 +241,7 @@ export async function generateVideoAdIdeas(
     thumbnail_url?: string;
   }>;
 }> {
+<<<<<<< HEAD
   const {
     suggestion,
     voice_samples,
@@ -434,4 +472,25 @@ export async function generateVideoAdIdeas(
       videos: [],
     };
   }
+=======
+  // Function disabled to save credits
+  return { ads: [], videos: [] };
+}
+*/
+export async function generateVideoAdIdeas(
+  input: GenerateVideoAdsInput
+): Promise<{
+  ads: VideoAdIdea[];
+  videos: Array<{
+    ad_idea_id: string;
+    video_id: string;
+    video_url?: string;
+    status: "pending" | "processing" | "completed" | "failed";
+    thumbnail_url?: string;
+  }>;
+}> {
+    // Completely disabled to save credits
+    console.log("🚫 Video generation is disabled.");
+    return { ads: [], videos: [] };
+>>>>>>> 85b1359 (sentiment improvements)
 }

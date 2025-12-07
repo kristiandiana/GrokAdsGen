@@ -70,7 +70,8 @@ export async function generateSuggestions(
         ${topicsContext}
         
         You are a senior social media strategist for ${brand_handle}.
-        Generate exactly 3 concrete, actionable suggestions based on the data above.
+        Generate specific, actionable suggestions for the top 8 topics listed above.
+        For each of the top 8 topics, provide ONE suggestion.
 
         Rules:
         - Prioritize fixing high-priority topics (negative sentiment or high intensity)
@@ -92,7 +93,7 @@ export async function generateSuggestions(
               "suggested_copy": string,
               "tone": "empathetic" | "funny" | "promotional" | "straightforward"
             },
-            ... (exactly 3 items total)
+            ... (one for each top topic, approx 5-8 items total)
           ]
         }`;
 

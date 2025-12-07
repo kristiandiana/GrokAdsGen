@@ -25,7 +25,7 @@ export async function analyzeBrandVisuals(mediaItems: MediaObject[]): Promise<Vi
     // 2. Analyze each image in parallel
     const descriptionPromises = photos.map(async (photo) => {
         try {
-            const prompt = "Describe the artistic style, lighting, color palette, and mood of this brand image in one concise sentence. Focus on the aesthetic.";
+            const prompt = "Describe the lighting, color palette (listing specific colors), and composition of this brand image. Focus on technical photography details and realism.";
             const description = await callGrokVision(prompt, photo.url);
             return description;
         } catch (err) {
