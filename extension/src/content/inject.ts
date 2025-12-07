@@ -5,6 +5,7 @@ import { DataSet } from "vis-data";
 import "../styles/tailwind.css";
 import { Topic, Post, Ad, Sentiment, Prominence, AdFormat } from "../types";
 import { stateManager } from "../store/state";
+import { createPostCardContainer } from "../components/PostCard";
 
 console.log("BrandPulse Extension: Content script loaded");
 
@@ -850,13 +851,10 @@ function createBrandPulseUI(): string {
         <div id="view-posts" class="view-content" style="display: none;">
           <div style="
             background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            padding: 24px;
+            border-radius: 0;
             max-height: 600px;
             overflow-y: auto;
           ">
-          
             <!-- Posts list items will be populated here -->
           </div>
         </div>
@@ -1394,7 +1392,12 @@ function initializeGraphView(dashboard: HTMLElement) {
         border: "#ffffff",
         highlight: { background: "#000000", border: "#ffffff" },
       },
-      font: { color: "#ffffff", size: 20, face: "Arial", bold: "bold" },
+      font: {
+        color: "#ffffff",
+        size: 20,
+        face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        bold: "bold",
+      },
       size: 50,
       borderWidth: 4,
       fixed: { x: true, y: true },
@@ -1411,8 +1414,8 @@ function initializeGraphView(dashboard: HTMLElement) {
       const borderWidth = prominence === "high" ? 3 : 2;
 
       // Calculate angle for even spacing around the circle
-      // Automatically adjusts based on sampleTopics.length
-      const angle = (index * 2 * Math.PI) / sampleTopics.length;
+      // Automatically adjusts based on topics.length
+      const angle = (index * 2 * Math.PI) / topics.length;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
 
@@ -1425,7 +1428,12 @@ function initializeGraphView(dashboard: HTMLElement) {
           border: "#000000",
           highlight: { background: "#ffffff", border: "#000000" },
         },
-        font: { color: "#000000", size: 13, face: "Arial", bold: "bold" },
+        font: {
+          color: "#000000",
+          size: 13,
+          face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+          bold: "bold",
+        },
         widthConstraint: { maximum: width },
         borderWidth: borderWidth,
         topicData: topic,
@@ -1600,7 +1608,7 @@ function expandTopic(
     font: {
       color: "rgba(255, 255, 255, 0)",
       size: 14,
-      face: "Arial",
+      face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       bold: "bold",
     },
     widthConstraint: { maximum: 160 },
@@ -1621,7 +1629,12 @@ function expandTopic(
       border: "rgba(0, 0, 0, 0)",
       highlight: { background: "#ffffff", border: "#000000" },
     },
-    font: { color: "rgba(0, 0, 0, 0)", size: 14, face: "Arial", bold: "bold" },
+    font: {
+      color: "rgba(0, 0, 0, 0)",
+      size: 14,
+      face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      bold: "bold",
+    },
     widthConstraint: { maximum: 160 },
     borderWidth: 3,
     topicData: topicData,
@@ -1965,7 +1978,7 @@ function resetGraphView(network: Network, dashboard: HTMLElement) {
             font: {
               color: "#ffffff",
               size: 20,
-              face: "Arial",
+              face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
               bold: "bold",
             },
             size: 50,
@@ -2299,11 +2312,14 @@ function showContentView(
 
 // Setup click handlers for tab view items to open content view
 function setupTabViewItemHandlers(dashboard: HTMLElement) {
+  // Get current state
+  const state = stateManager.getState();
+
   // Find all topics that contain each post/ad
   const allPosts: { post: Post; topic: Topic }[] = [];
   const allAds: { ad: Ad; topic: Topic }[] = [];
 
-  sampleTopics.forEach((topic) => {
+  state.topics.forEach((topic) => {
     topic.posts.forEach((post) => {
       allPosts.push({ post, topic });
     });
@@ -2312,16 +2328,8 @@ function setupTabViewItemHandlers(dashboard: HTMLElement) {
     });
   });
 
-  // Setup post item clicks
-  const postItems = dashboard.querySelectorAll("#view-posts .list-item");
-  postItems.forEach((item, index) => {
-    if (index < allPosts.length) {
-      item.addEventListener("click", () => {
-        const { topic } = allPosts[index];
-        showContentView(dashboard, "analysis", topic);
-      });
-    }
-  });
+  // Post item clicks are now handled by the PostCard component's onClick callback
+  // No need to set up click handlers here since PostCard handles it internally
 
   // Setup ad item clicks
   const adItems = dashboard.querySelectorAll("#view-ads .list-item");
@@ -2364,38 +2372,20 @@ function populatePostsView(dashboard: HTMLElement) {
   // Sort by retweets (most popular first)
   allPosts.sort((a, b) => b.post.retweets - a.post.retweets);
 
-  let postsHTML = "";
-  allPosts.forEach(({ post }) => {
-    const sentimentColor =
-      post.sentiment === "positive"
-        ? "#17bf63"
-        : post.sentiment === "negative"
-        ? "#e0245e"
-        : "#f59e0b";
+  // Clear existing content
+  postsView.innerHTML = "";
 
-    postsHTML += `
-      <div class="list-item" style="
-        padding: 16px;
-        border-bottom: 1px solid #e1e8ed;
-        cursor: pointer;
-      " onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='#ffffff'">
-        <div style="font-size: 14px; color: #14171a; margin-bottom: 8px; font-weight: 500;">
-          "${post.text}"
-        </div>
-        <div style="font-size: 12px; color: #657786; display: flex; gap: 16px;">
-          <span>${post.username} • ${post.timestamp}</span>
-          <span>${post.retweets} retweets</span>
-          <span style="color: ${sentimentColor}; font-weight: 600;">${
-      post.sentiment.charAt(0).toUpperCase() + post.sentiment.slice(1)
-    }</span>
-        </div>
-      </div>
-    `;
+  // Create post cards using the PostCard component
+  const postContainer = createPostCardContainer(allPosts, {
+    showTopicContext: false,
+    onClick: (post, topic) => {
+      showContentView(dashboard, "analysis", topic);
+    },
   });
 
-  postsView.innerHTML = postsHTML;
+  postsView.appendChild(postContainer);
 
-  // Re-setup click handlers
+  // Re-setup click handlers (for other views)
   setupTabViewItemHandlers(dashboard);
 }
 
