@@ -10,12 +10,12 @@
     "http://localhost:3000/*"
   ],
   "background": {
-    "service_worker": "dist/background/service-worker.js"
+    "service_worker": "background/service-worker.js"
   },
   "content_scripts": [
     {
       "matches": ["https://ads.twitter.com/*", "https://ads.x.com/*"],
-      "js": ["dist/content/inject.js"],
+      "js": ["content/inject.js"],
       "run_at": "document_idle"
     }
   ]
