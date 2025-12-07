@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { startPublicMentionStream } from "../../../lib/twitterClient";
+import { startPublicMentionStream } from "../../../lib/streamingtwitterClient";
 
 let currentBrand: string | null = null;
 
