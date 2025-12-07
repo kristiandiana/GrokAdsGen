@@ -1,25 +1,136 @@
 {
-  "timestamp": "2025-12-07T17:14:33.972Z",
+  "timestamp": "2025-12-07T17:59:09.874Z",
   "brand": "Tesla",
-  "suggestion": {
-    "id": "1",
-    "title": "Reassure on Production & Delivery",
-    "rationale": "Production & delivery has 81 mentions with high intensity (25) and 62% positive sentiment; a promotional tweet can address concerns and highlight progress to boost positivity.",
-    "topic": "production & delivery",
-    "priority": "high",
-    "suggested_copy": "Production hitting high gear! More Teslas rolling out every day. Check your app for updates 🚀 https://t.co/deliveries",
-    "tone": "promotional"
-  },
-  "ads": [
+  "strategies": [
     {
+      "suggestion_topic": "general chatter",
+      "suggestion_title": "Redirect General Chatter to Fun Engagement",
       "campaign": {
-        "name": "[GrokAds] Production hitting high gear!",
+        "name": "[GrokAds] general chatter",
         "daily_budget_micros": 1000000,
         "objective": "AWARENESS",
         "entity_status": "PAUSED"
       },
       "line_item": {
-        "name": "Targeting: Tesla production EV production",
+        "name": "Tesla Fun Light Shows Engagement",
+        "product_type": "PROMOTED_TWEETS",
+        "placements": [
+          "ALL_ON_TWITTER"
+        ],
+        "objective": "AWARENESS",
+        "bid_strategy": "MAX",
+        "bid_amount_micros": 750000,
+        "entity_status": "PAUSED",
+        "targeting_criteria": {
+          "keywords": [
+            "Tesla dance",
+            "light show",
+            "Santa Mode",
+            "Tesla lights",
+            "car dance",
+            "Tesla fun"
+          ],
+          "interests": [
+            "Tesla",
+            "Electric Vehicles",
+            "Automotive",
+            "Technology"
+          ]
+        }
+      },
+      "creatives": [
+        {
+          "headline": "Tesla Lights Dance!",
+          "body": "Pulse with epic light shows from your car. High detail magic!",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-decfbb73-72d7-4ce2-8df2-ab4016f01572.png",
+          "prompt_used": "Photorealistic macro close-up high-detail shot of Tesla Model 3 headlights and light bar dynamically pulsing in a synchronized light show pattern with realistic white, red, and amber glows, setting sun low on horizon behind casting dramatic backlight silhouette and soft rim light glow around edges, diffused atmospheric light reducing shadows, gentle golden hour glow, cinematic high-fidelity composition, hero Tesla lights occupy 60% of frame, subtle blurred festive night background reflecting fun theme, natural factory Quicksilver paint, no excessive saturation.",
+          "call_to_action": "Light It Up"
+        },
+        {
+          "headline": "Teslas Dance Party!",
+          "body": "Sync light shows across your Tesla fleet. Game changer!",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-ca3818d8-978c-4510-b7d4-4531717afd26.png",
+          "prompt_used": "Photorealistic wide environmental lifestyle shot of multiple Tesla Cybertrucks in a row performing synchronized light show dance with headlights and taillights glowing realistically, setting sun low on horizon behind vehicles creating dramatic backlight silhouettes and rim light outlines, soft diffused light with gentle glow, cinematic high-fidelity, hero Cybertrucks occupy 60% of frame, expansive open lot background at dusk subtly evoking party vibe with distant blurred cars, standard factory Stealth Grey color, natural lighting no over-saturation.",
+          "call_to_action": "Sync Now"
+        },
+        {
+          "headline": "Santa Mode Go!",
+          "body": "Enable holiday lights on your Tesla. Ho ho fun!",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-4187e238-4fb1-4d42-b852-cc899f4d7c93.png",
+          "prompt_used": "Photorealistic creative concept shot with human element of excited group of people smiling and watching a Tesla Model Y in foreground executing Santa Mode light show with festive realistic red and white light patterns on headlights, setting sun low on horizon behind car creating dramatic backlight and rim light effect around body, soft golden glow and diffused light, cinematic high-fidelity user interaction scene, hero Tesla Model Y occupies 60% of frame, subtle holiday-themed evening parking lot background with faint snow blur, standard factory Pearl White paint, natural professional lighting.",
+          "call_to_action": "Activate Santa"
+        }
+      ]
+    },
+    {
+      "suggestion_topic": "user satisfaction",
+      "suggestion_title": "Amplify User Satisfaction Stories",
+      "campaign": {
+        "name": "[GrokAds] user satisfaction",
+        "daily_budget_micros": 1000000,
+        "objective": "AWARENESS",
+        "entity_status": "PAUSED"
+      },
+      "line_item": {
+        "name": "Tesla User Satisfaction Stories",
+        "product_type": "PROMOTED_TWEETS",
+        "placements": [
+          "ALL_ON_TWITTER"
+        ],
+        "objective": "AWARENESS",
+        "bid_strategy": "MAX",
+        "bid_amount_micros": 750000,
+        "entity_status": "PAUSED",
+        "targeting_criteria": {
+          "keywords": [
+            "love my Tesla",
+            "Tesla satisfaction",
+            "happy Tesla owner",
+            "Tesla joy"
+          ],
+          "interests": [
+            "Tesla",
+            "Electric vehicles",
+            "Sustainable transport",
+            "Car enthusiasts"
+          ]
+        }
+      },
+      "creatives": [
+        {
+          "headline": "Tesla glow-up",
+          "body": "That new owner shine. Loving every mile? Share it!",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-abd9b7e3-7970-4cfd-a4e7-3f762b4052ad.png",
+          "prompt_used": "Photorealistic, cinematic high-fidelity macro close-up shot of Tesla Cybertruck's angular stainless steel panel and headlight detail as the hero object occupying 60% of frame, dramatic backlight from low horizon setting sun creating rim light and soft glow silhouette edges, diffused atmospheric light at dusk reducing harsh shadows, subtle background of open road fading into horizon reflecting user satisfaction joy, natural factory silver color, 1024x1024, professional photography style.",
+          "call_to_action": "Share your story"
+        },
+        {
+          "headline": "Tesla drives smiles",
+          "body": "Owners everywhere beaming. Your turn to join the fun?",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-d9476080-0a3a-45b3-9ee2-201607fa3f36.png",
+          "prompt_used": "Photorealistic, cinematic high-fidelity wide environmental lifestyle shot of Tesla Cybertruck driving on coastal highway as hero object occupying 60% of frame, primary light from rising sun low on horizon behind vehicle casting dramatic backlight silhouette and rim light on edges, soft diffused golden hour light at dawn, background of expansive ocean and sky subtly evoking user satisfaction freedom and happiness, standard factory Quicksilver color, 1024x1024, professional photography style.",
+          "call_to_action": "Share the drive"
+        },
+        {
+          "headline": "Real Tesla love",
+          "body": "Owners sharing their game changer stories. What's yours?",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-ecfb2f81-65e4-4028-a64a-84375a9bd2ba.png",
+          "prompt_used": "Photorealistic, cinematic high-fidelity creative concept shot with human element of smiling diverse family interacting happily beside parked Tesla Cybertruck as hero object occupying 60% of frame, low horizon setting sun backlight creating soft rim light glow and silhouette around truck and people, diffused atmospheric dusk light, background of suburban driveway with faint road leading to horizon reflecting everyday user satisfaction and family bonding, realistic factory Stealth Grey color, 1024x1024, professional photography style.",
+          "call_to_action": "Tell us now"
+        }
+      ]
+    },
+    {
+      "suggestion_topic": "company news & events",
+      "suggestion_title": "Highlight Positive Company News",
+      "campaign": {
+        "name": "[GrokAds] company news & events",
+        "daily_budget_micros": 1000000,
+        "objective": "AWARENESS",
+        "entity_status": "PAUSED"
+      },
+      "line_item": {
+        "name": "Tesla Positive News Teaser",
         "product_type": "PROMOTED_TWEETS",
         "placements": [
           "ALL_ON_TWITTER"
@@ -30,60 +141,276 @@
         "entity_status": "PAUSED",
         "targeting_criteria": {
           "keywords": [
-            "Tesla production",
-            "EV production",
-            "Tesla factory"
+            "Tesla news",
+            "Tesla events",
+            "EV updates",
+            "Cybertruck news"
           ],
           "interests": [
             "Tesla",
             "Electric vehicles",
-            "Automotive"
+            "Technology news",
+            "Automotive events"
           ]
         }
       },
-      "creative": {
-        "headline": "Production hitting high gear!",
-        "body": "More Teslas rolling out every day 🚀",
-        "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-4276f0c2-a00e-4412-a085-fb18907767bd.png",
-        "prompt_used": "Photorealistic cinematic high-fidelity macro close-up product shot with high detail of a sleek shiny new Tesla Model Y front grille and headlights on the production line, dramatic low-key lighting, cool-toned color palette of blues and purples, minimalist design with clean composition and negative space, moody serene atmosphere, hero Tesla car occupying 60% of frame, subtle blurred background reflecting production conveyor elements, reflective glossy surfaces"
-      }
+      "creatives": [
+        {
+          "headline": "Tesla News Drop Incoming!",
+          "body": "Huge updates on the horizon. Stay tuned!",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-45f99bfc-b0d2-4c68-8571-ad5722f0ed8f.png",
+          "prompt_used": "Photorealistic cinematic close-up macro shot of a Tesla Cybertruck as the hero object occupying 60% of the frame, high detail on angular stainless steel body and sharp edges glowing softly; primary light source is setting sun low on horizon slightly left, creating dramatic backlight with gentle glow on edges; soft twilight quality reduces harsh shadows; background subtly hints at event stage with faint banners; natural factory Quicksilver color; single image 1024x1024, high-fidelity professional photography.",
+          "call_to_action": "Watch Now"
+        },
+        {
+          "headline": "Epic Tesla Events Ahead!",
+          "body": "Game-changing reveals coming soon. Don't miss out!",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-89fd65c4-6c4f-40d3-a79c-86455d3b1107.png",
+          "prompt_used": "Photorealistic cinematic wide environmental lifestyle shot of a Tesla Model Y as the hero object centered occupying 60% of frame driving on open coastal road at twilight; primary light source setting sun low on horizon slightly left behind vehicle, dramatic backlight highlighting sleek curves with soft edge glow; gentle illumination, natural factory Stealth Grey color; background reflects news excitement with distant crowd silhouettes at an event horizon; single image 1024x1024, high-fidelity professional photography.",
+          "call_to_action": "RSVP Today"
+        },
+        {
+          "headline": "Join the Tesla Buzz!",
+          "body": "Users are raving about the latest. Your turn!",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-45f15ac3-2efd-4b47-be33-a1d69df8e9ce.png",
+          "prompt_used": "Photorealistic cinematic shot of diverse group of excited users interacting around a Tesla Cybertruck as hero object occupying 60% frame, people smiling and gesturing at vehicle display; creative concept with human element at a product unveiling event; primary light source rising sun low on horizon slightly left, soft backlight glow on truck and faces; twilight mood with gentle natural light; factory Quicksilver Cybertruck; background subtle event setup with banners; single image 1024x1024, high-fidelity professional photography.",
+          "call_to_action": "Sign Up"
+        }
+      ]
     },
     {
+      "suggestion_topic": "ai innovations",
+      "suggestion_title": "Showcase AI Advancements",
       "campaign": {
-        "name": "[GrokAds] Deliveries ramping up!",
+        "name": "[GrokAds] ai innovations",
         "daily_budget_micros": 1000000,
-        "objective": "TWEET_ENGAGEMENTS",
+        "objective": "AWARENESS",
         "entity_status": "PAUSED"
       },
       "line_item": {
-        "name": "Targeting: Tesla delivery Tesla order",
+        "name": "Tesla AI Advancements Showcase",
         "product_type": "PROMOTED_TWEETS",
         "placements": [
           "ALL_ON_TWITTER"
         ],
-        "objective": "TWEET_ENGAGEMENTS",
+        "objective": "AWARENESS",
         "bid_strategy": "MAX",
-        "bid_amount_micros": 500000,
+        "bid_amount_micros": 750000,
         "entity_status": "PAUSED",
         "targeting_criteria": {
           "keywords": [
-            "Tesla delivery",
-            "Tesla order",
-            "EV delivery"
+            "FSD",
+            "Tesla AI",
+            "Full Self Driving",
+            "Autopilot updates",
+            "AI driving"
           ],
           "interests": [
-            "Tesla owners",
-            "Electric cars",
-            "Car delivery"
+            "Tesla",
+            "Electric Vehicles",
+            "Artificial Intelligence",
+            "Autonomous Cars",
+            "Tech Innovations"
           ]
         }
       },
-      "creative": {
-        "headline": "Deliveries ramping up!",
-        "body": "Your Tesla is on the way. Sync now 🚀",
-        "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-b98fb28f-f928-4f17-99e3-ede6ee7fcea9.png",
-        "prompt_used": "Photorealistic cinematic high-fidelity wide environmental lifestyle shot of a row of sleek modern Tesla cars in a delivery lot at urban night, dramatic lighting with muted dark blues and warm yellows, reflective wet street creating sophisticated futuristic atmosphere, minimalist design, moody scene, hero Tesla cars as clear focal point occupying 60% of frame, subtle blurred background with delivery center vibes and open road hint"
-      }
+      "creatives": [
+        {
+          "headline": "FSD AI game changer",
+          "body": "Smarter paths ahead with latest updates",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-c2e86ad3-5039-4760-97d3-d60562579f6f.png",
+          "prompt_used": "Photorealistic cinematic high-fidelity close-up macro shot of Tesla Model Y dashboard screen displaying detailed FSD AI visualization of highway navigation and vehicle predictions as hero object occupying 60% of frame, soft diffused frontal lighting from low horizon setting sun creating gentle light-to-dark gradient and subtle right-side shadows, background subtly shows blurred road ahead reflecting AI smarts theme, natural factory Pearl White exterior visible in reflection, 1024x1024, professional studio quality, no saturation excess.",
+          "call_to_action": "Enable now"
+        },
+        {
+          "headline": "AI drives smarter",
+          "body": "Latest FSD innovations in action",
+          "prompt_used": "Photorealistic cinematic high-fidelity wide environmental lifestyle shot of Tesla Model 3 autonomously navigating a scenic coastal highway at dusk as hero object occupying 60% of frame, primary low horizon setting sun light source frontal with left side lighting creating soft shadows on right side and gentle gradient, background open road and ocean horizon subtly evoking AI innovation progress theme, factory Stealth Grey color, natural tones, 1024x1024.",
+          "call_to_action": "See demo"
+        },
+        {
+          "headline": "Unlock FSD AI now",
+          "body": "Hands-free future awaits",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-e2c9c774-dac8-410e-8e5a-af0bc2ed4875.png",
+          "prompt_used": "Photorealistic cinematic high-fidelity creative concept shot of confident driver with hands off wheel smiling in Tesla Model S during FSD AI highway drive as hero object occupying 60% of frame with human interaction element, soft frontal diffused lighting from rising low horizon sun positioned behind camera with subtle left side light and right shadows, background clean highway with geometric lane markings reflecting precision AI theme, factory Ultra Red color, natural professional lighting, 1024x1024.",
+          "call_to_action": "Upgrade today"
+        }
+      ]
+    },
+    {
+      "suggestion_topic": "product quality",
+      "suggestion_title": "Reassure on Product Quality",
+      "campaign": {
+        "name": "[GrokAds] product quality",
+        "daily_budget_micros": 1000000,
+        "objective": "AWARENESS",
+        "entity_status": "PAUSED"
+      },
+      "line_item": {
+        "name": "Tesla Quality Reassurance",
+        "product_type": "PROMOTED_TWEETS",
+        "placements": [
+          "ALL_ON_TWITTER"
+        ],
+        "objective": "AWARENESS",
+        "bid_strategy": "MAX",
+        "bid_amount_micros": 750000,
+        "entity_status": "PAUSED",
+        "targeting_criteria": {
+          "keywords": [
+            "Tesla quality",
+            "Tesla build quality",
+            "EV durability",
+            "Tesla reliability"
+          ],
+          "interests": [
+            "Tesla",
+            "Electric vehicles",
+            "Car enthusiasts",
+            "Automotive innovation"
+          ]
+        }
+      },
+      "creatives": [
+        {
+          "headline": "Tesla quality: Precision perfected",
+          "body": "Tight tolerances, flawless fits – and constant upgrades make it even better",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-76eced2c-38b4-4155-9fa9-5acdeb2b28e2.png",
+          "prompt_used": "Photorealistic cinematic close-up macro shot of a Tesla Model Y door panel and adjacent body seam showing impeccable fit and high-detail surface finish, hero object occupies 60% of frame, soft diffused backlighting from low setting sun on the left horizon behind camera casting gentle glow on left side and subtle shadows on right, early evening light, pristine factory silver paint standard color, subtle background of clean assembly line blurred, high-fidelity 1024x1024 single image, natural professional studio quality, no saturation excess.",
+          "call_to_action": "Build yours"
+        },
+        {
+          "headline": "Teslas: Built tough, road proven",
+          "body": "Handling every terrain with unmatched durability – improvements rolling out now",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-e12b7efa-e525-4dd1-9849-a880e9204cf7.png",
+          "prompt_used": "Photorealistic cinematic wide environmental lifestyle shot of a Tesla Cybertruck driving on rugged dirt road in golden hour, hero vehicle occupies 60% of frame in standard stainless steel finish, soft diffused backlighting from low rising sun on left horizon behind camera glowing left side with soft shadows on right, early morning light, background open landscape subtly evoking durability and reliability with distant mountains, high-fidelity 1024x1024 single image, natural tones.",
+          "call_to_action": "Test drive"
+        },
+        {
+          "headline": "Your Tesla: Quality you trust",
+          "body": "Owners love the build – refined with every software and hardware boost",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-bf62cc8e-f566-4fae-bd8a-703e6156af2c.png",
+          "prompt_used": "Photorealistic cinematic shot of a happy Tesla owner gently running hand over flawless hood of a red Tesla Model 3 showing user interaction and trust in quality, hero car occupies 60% of frame in standard pearl white paint, soft diffused backlighting from low setting sun on left horizon behind camera illuminating left side gently with subtle right shadows, late evening mood, background clean garage with subtle tools evoking maintenance ease, high-fidelity 1024x1024 single image, professional natural lighting.",
+          "call_to_action": "Order now"
+        }
+      ]
+    },
+    {
+      "suggestion_topic": "global operations",
+      "suggestion_title": "Spotlight Global Expansion",
+      "campaign": {
+        "name": "[GrokAds] global operations",
+        "daily_budget_micros": 1000000,
+        "objective": "AWARENESS",
+        "entity_status": "PAUSED"
+      },
+      "line_item": {
+        "name": "Spotlight Global Expansion",
+        "product_type": "PROMOTED_TWEETS",
+        "placements": [
+          "ALL_ON_TWITTER"
+        ],
+        "objective": "AWARENESS",
+        "bid_strategy": "AUTO",
+        "bid_amount_micros": null,
+        "entity_status": "PAUSED",
+        "targeting_criteria": {
+          "keywords": [
+            "Tesla Gigafactory",
+            "Tesla worldwide",
+            "EV expansion",
+            "Tesla factories"
+          ],
+          "interests": [
+            "Tesla",
+            "Electric vehicles",
+            "Sustainable energy",
+            "Automotive innovation"
+          ]
+        }
+      },
+      "creatives": [
+        {
+          "headline": "Giga Factories Worldwide",
+          "body": "Building the future everywhere",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-d9850785-08aa-44d3-849b-0a1c6987b324.png",
+          "prompt_used": "Photorealistic macro close-up shot of a silver Tesla Model Y front grille and hood, high detail on textured surfaces and emblem, positioned as 60% hero focal point, subtle world map etched faintly on the hood reflecting global factories, background softly blurred with dawn horizon backlight from behind creating rim light silhouette and gentle glow, soft diffused natural lighting, cinematic high-fidelity, 1024x1024.",
+          "call_to_action": "Explore Now"
+        },
+        {
+          "headline": "Tesla Accelerating Globally",
+          "body": "From factory floors to open roads",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-3acd1948-24af-4ed6-88e5-e8704ae651e2.png",
+          "prompt_used": "Photorealistic wide environmental lifestyle shot of a red Tesla Cybertruck driving on a coastal road at dusk, vehicle as 60% hero focal point centered in frame, background subtly shows diverse global landmarks like Shanghai skyline and Texas plains fading into horizon, primary low setting sun backlight from behind casting dramatic silhouette rim light and soft atmospheric glow around edges, natural diffused lighting, cinematic high-fidelity, 1024x1024.",
+          "call_to_action": "See the Map"
+        },
+        {
+          "headline": "Tesla Expansion Unlocked",
+          "body": "Drive the world’s energy shift",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-7d58668a-d1c5-48f0-a30a-d410c98df4f0.png",
+          "prompt_used": "Photorealistic creative concept shot with human element of diverse group of engineers interacting around a white Tesla Model 3 in a modern Gigafactory, car as 60% hero focal point in foreground, background subtly integrates world map projections on walls showing global operations sites, low rising sun backlight from large windows behind creating soft rim light silhouette and gentle diffused glow, natural professional lighting, cinematic high-fidelity user interaction vibe, 1024x1024.",
+          "call_to_action": "Join the Charge"
+        }
+      ]
+    },
+    {
+      "suggestion_topic": "energy products",
+      "suggestion_title": "Boost Energy Products Hype",
+      "campaign": {
+        "name": "[GrokAds] energy products",
+        "daily_budget_micros": 1000000,
+        "objective": "AWARENESS",
+        "entity_status": "PAUSED"
+      },
+      "line_item": {
+        "name": "Tesla Energy Products Hype Booster",
+        "product_type": "PROMOTED_TWEETS",
+        "placements": [
+          "ALL_ON_TWITTER"
+        ],
+        "objective": "AWARENESS",
+        "bid_strategy": "MAX",
+        "bid_amount_micros": 750000,
+        "entity_status": "PAUSED",
+        "targeting_criteria": {
+          "keywords": [
+            "Powerwall",
+            "Tesla Energy",
+            "home battery",
+            "solar backup",
+            "backup power"
+          ],
+          "interests": [
+            "Tesla",
+            "Renewable Energy",
+            "Solar Power",
+            "Home Automation"
+          ]
+        }
+      },
+      "creatives": [
+        {
+          "headline": "Powerwall glow",
+          "body": "Backup power that lights up your life https://t.co/powerwallglow",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-0c676b53-c5eb-4f2c-9145-b3f55b89bf9d.png",
+          "prompt_used": "Photorealistic macro close-up shot of a Tesla Powerwall unit filling 60% of the frame as the hero object, mounted on a subtle home wall background reflecting energy reliability, dramatic backlight from low setting sun behind creating silhouette and subtle edge glow, soft diffused light with smooth sky gradient, faint ambient illumination, cinematic high-fidelity, natural factory white and black colors, 1024x1024 single image",
+          "call_to_action": "Learn more"
+        },
+        {
+          "headline": "Powerwall game changer",
+          "body": "Seamless home energy, day or night https://t.co/powerwallhome",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-646157d1-9be4-4829-a860-b2640a84defe.png",
+          "prompt_used": "Photorealistic wide environmental lifestyle shot of a Tesla Powerwall installed on a modern house exterior filling 60% of frame as hero object, background of open suburban yard at dusk subtly evoking home energy independence, primary light from rising sun low on horizon behind creating dramatic backlight silhouette and edge highlights, soft diffused quality with smooth atmospheric sky gradient, faint ambient light, cinematic high-fidelity, standard factory colors, 1024x1024 single image",
+          "call_to_action": "Shop now"
+        },
+        {
+          "headline": "Powerwall never sleeps",
+          "body": "Keep the lights on, no matter what https://t.co/powerwallmagic",
+          "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-739a86f9-8500-4a31-bd16-5555c0d8a21e.png",
+          "prompt_used": "Photorealistic creative concept shot with human element of a family inside a home interacting with lights powered by a prominent Tesla Powerwall visible through window filling 60% of frame as hero object, background of cozy living room during evening outage subtly reflecting reliable power theme, low horizon setting sun backlight from outside casting silhouette glow on Powerwall edges through glass, soft diffused light and smooth sky gradient visible, faint ambient interior glow, cinematic high-fidelity, realistic factory colors, 1024x1024 single image",
+          "call_to_action": "Order today"
+        }
+      ]
     }
   ]
 }

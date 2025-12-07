@@ -143,7 +143,7 @@ async function consolidateTopics(rawKeywords: string[]): Promise<Map<string, str
     `;
 
     try {
-        const result = await callGrok(prompt, 'grok-4-1-fast-reasoning', true, 0);
+        const result = await callGrok(prompt, 'grok-4-1-fast-reasoning', true, 0.7); // Increased temperature slightly to 0.7 for variance
         if (result && result.mapping) {
             return new Map(Object.entries(result.mapping));
         }

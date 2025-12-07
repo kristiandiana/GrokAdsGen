@@ -2,14 +2,14 @@ import { searchPublicMentions, searchBrandVoiceTweets } from "./twitterClient";
 import { scoreTweets } from "./analysis";
 import { analyzeMentions, buildAnalysisFromAnnotations, Analysis } from "./sentimentAnalysis";
 import { generateSuggestions } from "./suggestions";
-import { generateAdIdeas, generateVideoAdIdeas, VideoAdIdea } from "./contentGeneration";
+import { generateAdIdeas, generateVideoAdIdeas } from "./contentGeneration";
 import {
   cleanupSentimentCache,
   getUnanalyzedTweets,
   storeBatch,
   tweetSentimentCache,
 } from "./sentimentCache";
-import { AnnotatedMention, BrandVoiceTweet, ScoredMention, Suggestion, AdIdea, GeneratedImage } from "./types/tweet";
+import { AnnotatedMention, BrandVoiceTweet, ScoredMention, Suggestion, AdIdea, GeneratedImage, AdGroup, VideoAdIdea } from "./types/tweet";
 
 export type BrandInsights = {
   brand: string;
@@ -18,6 +18,7 @@ export type BrandInsights = {
   analysis: Analysis;
   suggestions: Suggestion[];
   generated_ads?: AdIdea[];
+  generated_ad_groups?: AdGroup[];
   generated_images?: GeneratedImage[];
   generated_video_ads?: VideoAdIdea[];
   generated_videos?: Array<{
@@ -82,6 +83,7 @@ export async function buildBrandInsights(brand: string): Promise<BrandInsights> 
 
   // Optionally generate creative assets (best-effort, won't fail pipeline)
   let generatedAds: AdIdea[] = [];
+  let generatedAdGroups: AdGroup[] = [];
   let generatedImages: GeneratedImage[] = [];
   let generatedVideoAds: VideoAdIdea[] = [];
   let generatedVideos:
@@ -94,34 +96,50 @@ export async function buildBrandInsights(brand: string): Promise<BrandInsights> 
       }>
     | [] = [];
 
-  const primarySuggestion = suggestions[0];
-  if (primarySuggestion) {
+  // Log identified keywords/topics
+  const topTopics = analysis.topicSummaries.slice(0, 8);
+  console.log("\n🔑 Decided Topics/Keywords:");
+  topTopics.forEach(t => console.log(`   - ${t.topic} (${t.total} mentions)`));
+
+  // Generate ads for top 5-8 topics (suggestions)
+  // Ensure we have enough suggestions first
+  const suggestionsToProcess = suggestions.slice(0, 8);
+
+  for (const suggestion of suggestionsToProcess) {
+    console.log(`\n🎨 Generating Ad Ideas for Topic: "${suggestion.topic}"`);
     try {
       const adResult = await generateAdIdeas({
-        suggestion: primarySuggestion,
+        suggestion: suggestion,
         voice_samples: brand_voice,
         brand_handle: brand,
       });
-      generatedAds = adResult.ads;
-      generatedImages = adResult.images;
+      
+      generatedAds.push(...adResult.ads);
+      if (adResult.adGroup) {
+        generatedAdGroups.push(adResult.adGroup);
+      }
+      generatedImages.push(...adResult.images);
+      
       console.log(
-        `[sentimentPipeline] Generated ${generatedAds.length} ads and ${generatedImages.length} images`
+        `   ✅ Generated ${adResult.ads.length} ads for "${suggestion.topic}"`
       );
     } catch (err) {
-      console.warn("[sentimentPipeline] Failed to generate image ads", err);
+      console.warn(`[sentimentPipeline] Failed to generate ads for ${suggestion.topic}`, err);
     }
 
+    // Video generation paused per user request
+    /*
     try {
       const videoResult = await generateVideoAdIdeas({
-        suggestion: primarySuggestion,
+        suggestion: suggestion,
         voice_samples: brand_voice,
         brand_handle: brand,
         waitForCompletion: true,
       });
-      generatedVideoAds = videoResult.ads;
-      generatedVideos = videoResult.videos;
+      generatedVideoAds.push(...videoResult.ads);
+      generatedVideos.push(...videoResult.videos);
       console.log(
-        `[sentimentPipeline] Generated ${generatedVideoAds.length} video ads (status only)`
+        `   🎥 Generated ${videoResult.ads.length} video ads for "${suggestion.topic}" (status only)`
       );
       console.log(
         "[sentimentPipeline] Video assets:",
@@ -132,8 +150,9 @@ export async function buildBrandInsights(brand: string): Promise<BrandInsights> 
         }))
       );
     } catch (err) {
-      console.warn("[sentimentPipeline] Failed to generate video ads", err);
+      console.warn(`[sentimentPipeline] Failed to generate video ads for ${suggestion.topic}`, err);
     }
+    */
   }
 
   return {
@@ -143,6 +162,7 @@ export async function buildBrandInsights(brand: string): Promise<BrandInsights> 
     analysis,
     suggestions,
     generated_ads: generatedAds,
+    generated_ad_groups: generatedAdGroups,
     generated_images: generatedImages,
     generated_video_ads: generatedVideoAds,
     generated_videos: generatedVideos,
