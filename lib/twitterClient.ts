@@ -96,7 +96,7 @@ export async function searchBrandVisualPosts(brand: string, limit = 20) {
 export async function searchBrandContext(brand: string, limitPerType = 15) {
   // If user requested massive scale, we'll try to get 10,000 raw tweets (which yields fewer filtered)
   // Or we can set targetFilteredCount to 1000 if we want 1000 *good* tweets.
-  const targetCount = 10000;
+  const targetCount = 400;
 
   const [mentions, visualPosts] = await Promise.all([
     searchPublicMentions(brand, targetCount),

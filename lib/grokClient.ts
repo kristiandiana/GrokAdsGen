@@ -35,8 +35,6 @@ export async function callGrok(
   jsonMode = true,
   temperature = 0
 ) {
-  // For large/complex prompts, disable strict json_mode to avoid truncation issues
-  // We will parse manually.
   const grokClient = getClient();
   const response = await grokClient.chat.completions.create({
     model,

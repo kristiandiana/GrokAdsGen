@@ -18,7 +18,8 @@ function createTopic(
   sentiment: Sentiment,
   prominence: Prominence,
   posts: Post[],
-  ads: Ad[]
+  ads: Ad[],
+  actionableStep?: string
 ): Topic {
   return {
     id,
@@ -28,6 +29,7 @@ function createTopic(
     mentionCount: posts.length,
     posts,
     ads,
+    actionableStep,
   };
 }
 
@@ -72,7 +74,8 @@ const sampleTopics: Topic[] = [
         format: "single image",
         cta: "Track Your Order",
       },
-    ]
+    ],
+    "Acknowledge the delays up front and show a concrete fix: new carriers, faster lanes, or guaranteed delivery windows. Pair creative with live delivery speed stats or customer screenshots of fast arrivals. Retarget anyone who asked about shipping with a clear CTA to track their order or choose express. Keep the tone empathetic and specific, not generic apologies."
   ),
   createTopic(
     "topic-2",
@@ -125,7 +128,8 @@ const sampleTopics: Topic[] = [
         format: "carousel",
         cta: "Explore Collection",
       },
-    ]
+    ],
+    'Ride the hype: lead with the hero colorway in motion, then show quick styling combos. Use social proof from creators and early buyers, and invite UGC with a simple hashtag. Offer limited drops or early access for those who engage with colorway content. Keep CTAs playful - "Style your fit" instead of "Buy now".'
   ),
   createTopic(
     "topic-3",
@@ -167,7 +171,8 @@ const sampleTopics: Topic[] = [
         format: "image",
         cta: "See Value",
       },
-    ]
+    ],
+    "Reframe price as value: highlight durability, perks, and cost-per-use in plain language. Create side-by-side comparisons that show why it's worth it, and add a time-bound incentive (trial, bonus, or limited discount) to nudge skeptics. Target carts and lapsed visitors with reassurance-focused creative. Tone should be respectful and transparent, not defensive."
   ),
   createTopic(
     "topic-4",
@@ -209,7 +214,8 @@ const sampleTopics: Topic[] = [
         format: "single image",
         cta: "Learn More",
       },
-    ]
+    ],
+    "Lead with proof: materials, testing, and guarantees. Show behind-the-scenes clips of quality checks and real customer fixes. Offer a no-questions-asked warranty and feature support response times to build trust. Retarget complainers with a service-first CTA like “We’ll make it right” before asking for another purchase."
   ),
   createTopic(
     "topic-5",
@@ -251,7 +257,8 @@ const sampleTopics: Topic[] = [
         format: "video",
         cta: "Watch Trailer",
       },
-    ]
+    ],
+    "Build a launch runway: tease the standout benefit in a single line, then drip short reveals (design, feature, price, drop date). Give early signups a tiny perk (exclusive color, early ship, or bonus accessory). Use countdowns and reminders for people who engaged with launch posts. Keep CTAs focused on saving a spot or getting early access."
   ),
 ];
 
@@ -687,7 +694,9 @@ function setupDashboardInteractions(dashboard: HTMLElement) {
   if (backToTopicBtn) {
     backToTopicBtn.addEventListener("click", () => {
       const graphView = dashboard.querySelector("#view-graph") as HTMLElement;
-      const contentView = dashboard.querySelector("#content-view") as HTMLElement;
+      const contentView = dashboard.querySelector(
+        "#content-view"
+      ) as HTMLElement;
       if (graphView && contentView) {
         contentView.style.display = "none";
         graphView.style.display = "block";
@@ -2003,7 +2012,8 @@ function showContentView(
     const brandHandle = state.insights?.brand
       ? `@${state.insights.brand.toLowerCase()}`
       : "@Tesla";
-    const brandAvatarUrl = "https://pbs.twimg.com/profile_images/1337607516008501250/6Ggc4S5n_400x400.png";
+    const brandAvatarUrl =
+      "https://pbs.twimg.com/profile_images/1337607516008501250/6Ggc4S5n_400x400.png";
 
     // Clear content body and use AdCard components
     contentBody.innerHTML = "";
@@ -2214,7 +2224,8 @@ function populateAdsView(dashboard: HTMLElement) {
   const brandHandle = state.insights?.brand
     ? `@${state.insights.brand.toLowerCase()}`
     : "@Tesla";
-  const brandAvatarUrl = "https://pbs.twimg.com/profile_images/1337607516008501250/6Ggc4S5n_400x400.png";
+  const brandAvatarUrl =
+    "https://pbs.twimg.com/profile_images/1337607516008501250/6Ggc4S5n_400x400.png";
 
   // Clear existing content
   adsView.innerHTML = "";
@@ -2447,6 +2458,25 @@ function showTopicDetail(dashboard: HTMLElement, topic: Topic) {
         <span class="actionable-arrow" style="transition: transform 0.2s; color: #657786;">▼</span>
       </button>
       <div class="actionable-content" style="display: none;">
+        <div style="
+          background: #0f172a;
+          color: #e2e8f0;
+          border-radius: 8px;
+          padding: 14px;
+          margin-bottom: 12px;
+          line-height: 1.5;
+          box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+        ">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #a5b4fc; margin-bottom: 6px;">
+            Playbook
+          </div>
+          <div style="font-size: 14px;">
+            ${
+              topic.actionableStep ||
+              "We're preparing an actionable playbook for this topic."
+            }
+          </div>
+        </div>
   `;
 
   topic.ads.forEach((ad: Ad) => {
