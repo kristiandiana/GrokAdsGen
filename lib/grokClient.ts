@@ -35,8 +35,7 @@ export async function callGrok(
   jsonMode = true,
   temperature = 0
 ) {
-  const grokClient = getClient();
-  const response = await grokClient.chat.completions.create({
+  const response = await client.chat.completions.create({
     model,
     messages: [{ role: "user", content: prompt }],
     temperature,
@@ -51,24 +50,25 @@ export async function callGrok(
 }
 
 export async function callGrokVision(prompt: string, imageUrl: string) {
-    const response = await client.chat.completions.create({
-        model: 'grok-2-vision-1212',
-        messages: [
-            {
-                role: 'user',
-                content: [
-                    { type: 'text', text: prompt },
-                    { type: 'image_url', image_url: { url: imageUrl } }
-                ]
-            }
+  const grokClient = getClient();
+  const response = await grokClient.chat.completions.create({
+    model: "grok-2-vision-1212",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url: imageUrl } },
         ],
-        temperature: 0.2,
-    });
+      },
+    ],
+    temperature: 0.2,
+  });
 
-    const content = response.choices[0].message.content;
-    if (!content) throw new Error('No description returned from Grok Vision');
-    
-    return content;
+  const content = response.choices[0].message.content;
+  if (!content) throw new Error("No description returned from Grok Vision");
+
+  return content;
 }
 
 export async function generateImage(prompt: string): Promise<GeneratedImage> {
