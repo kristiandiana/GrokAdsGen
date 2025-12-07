@@ -348,6 +348,8 @@ class StateManager {
   private mapInsightsToTopics(insights: BrandInsights): Topic[] {
     if (!insights?.analysis?.topicSummaries) return [];
 
+    const normalizeTopic = (topic?: string) => this.normalizeTopic(topic);
+
     const mentionById = new Map<string, PublicMention>();
     (insights.public_mentions || []).forEach((mention) => {
       mentionById.set(mention.id, mention);
@@ -376,7 +378,8 @@ class StateManager {
     const attachGeneratedAd = (adIdea: any) => {
       const topic =
         this.getTopicForAdIdea(adIdea, insights.suggestions) || "general";
-      const adsForTopic = generatedAdsByTopic.get(topic) || [];
+      const normalizedTopic = normalizeTopic(topic);
+      const adsForTopic = generatedAdsByTopic.get(normalizedTopic) || [];
       const videoInfo = videoByAdId.get(adIdea.id);
 
       // Skip media-first ads that never produced a usable asset
@@ -395,7 +398,7 @@ class StateManager {
         imageUrl,
         videoUrl: videoInfo?.url,
       });
-      generatedAdsByTopic.set(topic, adsForTopic);
+      generatedAdsByTopic.set(normalizedTopic, adsForTopic);
     };
 
     (insights.generated_ads || []).forEach(attachGeneratedAd);
@@ -404,7 +407,9 @@ class StateManager {
     const postsByTopic = new Map<string, Post[]>();
     (insights.analysis.annotated || []).forEach((annotation) => {
       const mention = mentionById.get(annotation.tweet_id);
-      const topics = annotation.topics?.length ? annotation.topics : ["general"];
+      const topics = annotation.topics?.length
+        ? annotation.topics
+        : ["general"];
 
       const post: Post = {
         id: annotation.tweet_id,
@@ -418,26 +423,34 @@ class StateManager {
       };
 
       topics.forEach((topicName) => {
-        const bucket = postsByTopic.get(topicName) || [];
+        const normalizedTopic = normalizeTopic(topicName);
+        const bucket = postsByTopic.get(normalizedTopic) || [];
         bucket.push(post);
-        postsByTopic.set(topicName, bucket);
+        postsByTopic.set(normalizedTopic, bucket);
       });
     });
 
     const suggestionsByTopic = new Map<string, Suggestion[]>();
     (insights.suggestions || []).forEach((suggestion) => {
-      const bucket = suggestionsByTopic.get(suggestion.topic) || [];
+      const normalizedTopic = normalizeTopic(suggestion.topic);
+      const bucket = suggestionsByTopic.get(normalizedTopic) || [];
       bucket.push(suggestion);
-      suggestionsByTopic.set(suggestion.topic, bucket);
+      suggestionsByTopic.set(normalizedTopic, bucket);
     });
 
     return insights.analysis.topicSummaries.map((summary) => {
-      const posts = postsByTopic.get(summary.topic) || [];
-      const suggestionAds = (suggestionsByTopic.get(summary.topic) || []).map(
-        (suggestion, index) => this.mapSuggestionToAd(suggestion, index)
-      );
-      const generatedAds = generatedAdsByTopic.get(summary.topic) || [];
+      const normalizedTopic = normalizeTopic(summary.topic);
+      const posts = postsByTopic.get(normalizedTopic) || [];
+      const suggestionAds = (
+        suggestionsByTopic.get(normalizedTopic) || []
+      ).map((suggestion, index) => this.mapSuggestionToAd(suggestion, index));
+      const generatedAds = generatedAdsByTopic.get(normalizedTopic) || [];
       const ads = [...suggestionAds, ...generatedAds];
+      const actionableStep = this.buildActionableStep(
+        summary,
+        suggestionsByTopic.get(normalizedTopic) || [],
+        insights.analysis.generalSentiment.label
+      );
 
       return {
         id: `topic-${summary.topic}`,
@@ -447,6 +460,7 @@ class StateManager {
         mentionCount: summary.total || posts.length,
         posts,
         ads,
+        actionableStep,
       };
     });
   }
@@ -486,6 +500,55 @@ class StateManager {
     if (!adIdea?.id) return suggestions[0]?.topic;
     const match = suggestions.find((s) => adIdea.id?.includes(s.id));
     return match?.topic || suggestions[0]?.topic;
+  }
+
+  private normalizeTopic(topic?: string): string {
+    if (!topic) return "general";
+    const normalized = topic.trim().toLowerCase();
+    return normalized || "general";
+  }
+
+  // Always provide a short actionable guideline per topic (3-4 sentences)
+  private buildActionableStep(
+    summary: TopicSummary,
+    suggestions: Suggestion[],
+    overallSentiment: string
+  ): string {
+    const topicName = summary.topic;
+    const primarySuggestion = suggestions[0];
+
+    if (primarySuggestion) {
+      const copy =
+        primarySuggestion.suggested_copy ||
+        primarySuggestion.rationale ||
+        primarySuggestion.title;
+
+      return (
+        `${primarySuggestion.title}. ` +
+        `${copy} ` +
+        `Emphasize clear benefits, acknowledge what users are saying about ${topicName}, ` +
+        `and A/B test variants that mirror the voice of your happiest customers.`
+      );
+    }
+
+    const tone =
+      overallSentiment === "very negative" || overallSentiment === "negative"
+        ? "urgent and empathetic"
+        : overallSentiment === "positive" || overallSentiment === "very positive"
+        ? "celebratory but specific"
+        : "reassuring and confident";
+
+    const angle =
+      this.deriveSentiment(summary) === "negative"
+        ? "address the pain points head-on with proof of fixes or guarantees"
+        : "double down on what resonates and invite participation";
+
+    return [
+      `Focus on ${topicName} with an ${tone} tone.`,
+      `Lead with a single promise that matters here, and back it up with proof (stats, testimonials, or behind-the-scenes detail).`,
+      `Retarget people who engaged with ${topicName}-related posts using creative that ${angle}.`,
+      `End every touchpoint with a clear next step (CTA) that feels natural to the conversation, not salesy.`,
+    ].join(" ");
   }
 
   private formatTimestamp(timestamp?: string): string {

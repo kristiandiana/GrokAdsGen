@@ -9,7 +9,7 @@ const BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN || process.env.X_BEARER_TO
 
 const BASE_URL = "https://api.twitter.com/2/tweets/search/recent";
 
-export async function searchPublicMentions(brand: string, limit = 50) {
+export async function searchPublicMentions(brand: string, targetFilteredCount = 50) {
   const query = buildQuery(brand);
   
   // We'll fetch in batches of 100 (max allowed per request)
@@ -89,7 +89,7 @@ export async function searchBrandVisualPosts(brand: string, limit = 20) {
 export async function searchBrandContext(brand: string, limitPerType = 15) {
   // If user requested massive scale, we'll try to get 10,000 raw tweets (which yields fewer filtered)
   // Or we can set targetFilteredCount to 1000 if we want 1000 *good* tweets.
-  const targetCount = 1000; 
+  const targetCount = 400; 
   
   const [mentions, visualPosts] = await Promise.all([
     searchPublicMentions(brand, targetCount), 
