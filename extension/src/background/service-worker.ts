@@ -48,3 +48,4 @@ async function handleFetchInsights(brand?: string) {
   }
   return res.json();
 }
+

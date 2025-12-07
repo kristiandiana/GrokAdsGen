@@ -197,3 +197,17 @@ export async function waitForVideoCompletion(
     `Video generation timed out after ${maxAttempts} attempts for request_id: ${videoId}`
   );
 }
+
+/**
+ * Generate video and wait for completion (convenience function)
+ * @param prompt - Text description of the video to generate
+ * @param options - Optional video generation parameters
+ * @returns Promise with completed video URL
+ */
+export async function generateVideoAndWait(
+  prompt: string,
+  options: GenerateVideoOptions = {}
+): Promise<string> {
+  const result = await generateVideo(prompt, options);
+  return result.video_url;
+}

@@ -1,0 +1,88 @@
+{
+  "timestamp": "2025-12-07T16:22:13.768Z",
+  "brand": "Tesla",
+  "suggestion": {
+    "id": "1",
+    "title": "Counter High Intensity Brand Mentions",
+    "rationale": "Tesla leads with 849 mentions, 51% positive but high intensity of 255; promote iconic features to amplify positives and dilute intensity.",
+    "topic": "vehicle light shows",
+    "priority": "high",
+    "suggested_copy": "Teslas can dance! Play any light show in your car & sync with the crew for next-level vibes. Create yours today https://t.co/PA51qM9pIQ",
+    "tone": "promotional"
+  },
+  "ads": [
+    {
+      "campaign": {
+        "name": "[GrokAds] Teslas can dance!",
+        "daily_budget_micros": 1000000,
+        "objective": "AWARENESS",
+        "entity_status": "PAUSED"
+      },
+      "line_item": {
+        "name": "Targeting: Tesla light show car dance lights",
+        "product_type": "PROMOTED_TWEETS",
+        "placements": [
+          "ALL_ON_TWITTER"
+        ],
+        "objective": "AWARENESS",
+        "bid_strategy": "AUTO",
+        "bid_amount_micros": null,
+        "entity_status": "PAUSED",
+        "targeting_criteria": {
+          "keywords": [
+            "Tesla light show",
+            "car dance lights",
+            "Tesla Santa Mode"
+          ],
+          "interests": [
+            "Tesla",
+            "Electric Vehicles"
+          ]
+        }
+      },
+      "creative": {
+        "headline": "Teslas can dance!",
+        "body": "Play built-in light shows or create your own. Sync with the crew for epic nights",
+        "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-5fff729a-f002-4f5c-8241-73f3a605f237.png",
+        "prompt_used": "Photorealistic cinematic close-up macro shot of a sleek Tesla car as the hero object occupying 60% of the frame, high detail on glowing LED headlights and taillights pulsing in a dynamic light show pattern, dramatic lighting with cool-toned blues and blacks, moody mysterious atmosphere, minimalist design with clean composition and negative space, subtle dark urban night backdrop reflecting light show theme, muted dark tones and soft whites, sophisticated futuristic vibe, high-fidelity 1024x1024"
+      }
+    },
+    {
+      "campaign": {
+        "name": "[GrokAds] Sync Tesla light shows",
+        "daily_budget_micros": 1000000,
+        "objective": "TWEET_ENGAGEMENTS",
+        "entity_status": "PAUSED"
+      },
+      "line_item": {
+        "name": "Targeting: Tesla sync lights Tesla light show",
+        "product_type": "PROMOTED_TWEETS",
+        "placements": [
+          "ALL_ON_TWITTER"
+        ],
+        "objective": "TWEET_ENGAGEMENTS",
+        "bid_strategy": "MAX",
+        "bid_amount_micros": 500000,
+        "entity_status": "PAUSED",
+        "targeting_criteria": {
+          "keywords": [
+            "Tesla sync lights",
+            "Tesla light show",
+            "car light sync"
+          ],
+          "interests": [
+            "Tesla",
+            "Car Enthusiasts",
+            "Electric Cars"
+          ]
+        }
+      },
+      "creative": {
+        "headline": "Sync Tesla light shows",
+        "body": "Next-level vibes: play any show, sync with friends, make yours. Game changer!",
+        "media_url": "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-4373bf11-9a8e-41ab-bcc1-2328a336bd2a.png",
+        "prompt_used": "Photorealistic cinematic wide environmental lifestyle shot of multiple sleek Tesla cars as hero objects occupying 60% of the frame synchronized in a vibrant light show, high detail on pulsing LEDs and reflections, dramatic lighting with cool-toned blues and blacks, moody mysterious urban night backdrop with party atmosphere subtly reflecting sync theme, minimalist clean composition negative space, muted dark tones soft whites, sophisticated futuristic atmosphere, high-fidelity 1024x1024"
+      }
+    }
+  ]
+}

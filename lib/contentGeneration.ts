@@ -1,10 +1,12 @@
 import { callGrok, generateImage } from "./grokClient";
 import { generateVideo } from "./pikaClient";
+import { analyzeBrandVisuals } from "./visionAnalysis";
 import type {
   Suggestion,
   BrandVoiceTweet,
   AdIdea,
   GeneratedImage,
+  VideoAdIdea
 } from "./types/tweet";
 
 interface GenerateAdsInput {
@@ -33,14 +35,45 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
-        Generate exactly 4 promotable ad ideas that directly address the suggestion above.
+        Generate exactly 2 promotable ad ideas that directly address the suggestion above.
 
         Rules:
         - Match the brand's voice 100% from the tweets
-        - Vary objectives: one awareness, one engagement, one conversions, one retention
+        - Match the brand's VISUAL STYLE for image prompts
+        - Vary objectives: one awareness, one engagement (or conversions)
         - Format: single_image (1024x1024)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
-        - Image prompt must be impactful, realistic, clean/sleek, and with copywriting
+        - Image prompt must be **PHOTOREALISTIC**, cinematic, and high-fidelity. 
+        - AVOID: "AI sheen", "cartoonish", "over-saturated", "generic illustration".
+        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood)
+        - If Visual Style Guide says "grainy/film", explicitly ask for "film grain, shot on 35mm".
+        - If Visual Style Guide says "minimalist", explicitly ask for "clean composition, negative space".
+        
+        New: Visual Variety Requirements (Must be distinct for each ad):
+        - Ad 1: Macro/Close-up product shot (high detail)
+        - Ad 2: Wide environmental/lifestyle shot (context)
+        
+        New: Copy Adherence Requirement:
+        - The image prompt MUST include the key noun/subject from the headline.
+        - Example: If headline mentions "CyberTruck", image prompt must specify "CyberTruck".
+        
+        New: Visual Balance Requirements:
+        - HERO OBJECT: The main product (e.g. car, phone, drink) must be the clear focal point (60% of frame).
+        - BACKGROUND: Must subtly reflect the Copywriting theme. 
+          * Example: If headline says "Freedom", background is open road/sky.
+          * Example: If headline says "Precision", background is clean/geometric studio.
+        - STYLE: Must be 80% based on the "Visual Style Guide" provided above, and 20% creative adaptation to the new copy.
+        
+        New: Recommend a bidding strategy and target bid (in micro-currency).
+        - bid_strategy: 'AUTO' | 'MAX' | 'TARGET'
+        - Logic:
+          * Use 'AUTO' for Awareness objectives (lowest cost).
+          * Use 'MAX' for Engagement/Conversions (get volume).
+          * Use 'TARGET' only if you want to control CPA strictly.
+        - target_bid: number (e.g. 500000 for $0.50). Set to 0 if AUTO.
+        
+        New: Recommend basic targeting criteria.
+        - targeting: { keywords: string[], interests: string[] }
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -50,10 +83,16 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
               "body": string,
               "call_to_action": string,
               "hashtags": string[],
-              "objective": "awareness" | "engagement" | "conversions" | "retention",
-              "image_prompt": string (detailed, high-quality visual description)
+              "objective": "awareness" | "engagement" | "conversions",
+              "image_prompt": string (detailed, high-quality visual description matching style guide),
+              "bid_strategy": "AUTO" | "MAX" | "TARGET",
+              "target_bid": number,
+              "targeting": {
+                "keywords": string[],
+                "interests": string[]
+              }
             },
-            ... (exactly 4 items)
+            ... (exactly 2 items)
           ]
         }
 
@@ -87,7 +126,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
           typeof ad.image_prompt === "string" &&
           ad.image_prompt.length > 50
       )
-      .slice(0, 4)
+      .slice(0, 2)
       .map((ad, i) => ({
         id: `ad-${suggestion.id}-${i + 1}`,
         headline: ad.headline.trim(),
@@ -100,6 +139,9 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         suggested_tweet_text: `${ad.headline}\n\n${ad.body}\n\n${
           ad.call_to_action
         } ${ad.hashtags.join(" ")}`.trim(),
+        bid_strategy: ad.bid_strategy || 'AUTO',
+        target_bid: ad.target_bid || 1000000,
+        targeting: ad.targeting || { keywords: [], interests: [] }
       }));
 
     const images: GeneratedImage[] = [];
@@ -145,12 +187,6 @@ interface GenerateVideoAdsInput {
   waitForCompletion?: boolean; // If true, waits for video generation to complete
 }
 
-export interface VideoAdIdea extends AdIdea {
-  video_url?: string;
-  video_id?: string;
-  video_status?: "pending" | "processing" | "completed" | "failed";
-}
-
 /**
  * Generate video ad ideas with video generation using Pika Labs
  * @param input - Input containing suggestion, voice samples, and brand handle
@@ -175,6 +211,13 @@ export async function generateVideoAdIdeas(
     waitForCompletion = false,
   } = input;
 
+  // 1. Analyze Visual Style (if any voice samples have images)
+  const allMedia = voice_samples.flatMap((v) => v.media || []);
+  const visualAnalysis = await analyzeBrandVisuals(allMedia);
+  const visualStyleContext = visualAnalysis.consolidatedStyle
+    ? `\nVISUAL STYLE GUIDE (Must match this aesthetic): ${visualAnalysis.consolidatedStyle}\n`
+    : "";
+
   // First generate ad ideas (similar to generateAdIdeas but for video format)
   const voiceContext =
     voice_samples.length > 0
@@ -187,18 +230,53 @@ export async function generateVideoAdIdeas(
   const suggestionContext = `ACTION TO TAKE:\nTitle: ${suggestion.title}\nRationale: ${suggestion.rationale}\nTopic: ${suggestion.topic}\nPriority: ${suggestion.priority}\nTone: ${suggestion.tone}\nExample tweet: "${suggestion.suggested_copy}"`;
 
   const prompt = `${voiceContext}
+        ${visualStyleContext}
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
-        Generate exactly 3 video ad ideas that directly address the suggestion above.
+        Generate exactly 2 video ad ideas that directly address the suggestion above.
 
         Rules:
         - Match the brand's voice 100% from the tweets
+        - Match the brand's VISUAL STYLE for video prompts${
+          visualAnalysis.consolidatedStyle
+            ? ` - incorporate the lighting, color palette, mood, and composition from the Visual Style Guide above`
+            : ""
+        }
         - Vary objectives: one awareness, one engagement, one conversions
         - Format: video (16:9 aspect ratio recommended)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
-        - Video prompt must be detailed, cinematic, and describe motion/action
-        - Video prompts should be 2-3 sentences describing the visual narrative
+        
+        CRITICAL VIDEO PROMPT GUIDELINES (for best quality output):
+        ${
+          visualAnalysis.consolidatedStyle
+            ? `- CRITICAL: Video prompts MUST match the brand's visual style: ${visualAnalysis.consolidatedStyle
+                .replace("Visual Style Pattern: ", "")
+                .substring(0, 300)}\n        `
+            : ""
+        }- Video prompts should be SIMPLE and FOCUSED - avoid complex scenes with multiple moving elements
+        - Use MINIMAL MOTION: prefer slow, subtle camera movements (gentle pan, slow zoom, or static shot)
+        - Incorporate the brand's visual aesthetic: ${
+          visualAnalysis.consolidatedStyle
+            ? "match the lighting, color palette, mood, and composition from the visual style guide above"
+            : "use professional, cinematic composition"
+        }
+        - Avoid: fast movements, multiple subjects moving, complex action sequences, rapid transitions
+        - Prefer: single subject, slow camera movement, cinematic lighting, professional composition
+        - Keep prompts to 1-2 sentences maximum - be concise and specific
+        - Focus on ONE clear visual: a product, a scene, or a single action
+        - Use descriptive but simple language: "slow camera pan", "gentle zoom", "static shot with subtle lighting"
+        - Video prompts should be specific to the brand and product.
+        
+        New: Recommend a bidding strategy and target bid (in micro-currency).
+        - bid_strategy: 'AUTO' | 'MAX' | 'TARGET'
+        - Logic:
+          * Use 'AUTO' for Awareness objectives.
+          * Use 'MAX' for Engagement/Conversions.
+        - target_bid: number (e.g. 500000 for $0.50). Set to 0 if AUTO.
+        
+        New: Recommend basic targeting criteria.
+        - targeting: { keywords: string[], interests: string[] }
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -209,9 +287,21 @@ export async function generateVideoAdIdeas(
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions",
-              "video_prompt": string (detailed, cinematic video description with motion)
+              "video_prompt": string (1-2 sentences, simple and focused, minimal motion${
+                visualAnalysis.consolidatedStyle
+                  ? ` - incorporate the brand's visual style: ${visualAnalysis.consolidatedStyle
+                      .replace("Visual Style Pattern: ", "")
+                      .substring(0, 150)}`
+                  : ""
+              } - use slow camera movements or static shots, avoid complex scenes),
+              "bid_strategy": "AUTO" | "MAX" | "TARGET",
+              "target_bid": number,
+              "targeting": {
+                "keywords": string[],
+                "interests": string[]
+              }
             },
-            ... (exactly 3 items)
+            ... (exactly 2 items)
           ]
         }
 
@@ -243,7 +333,7 @@ export async function generateVideoAdIdeas(
           typeof ad.video_prompt === "string" &&
           ad.video_prompt.length > 50
       )
-      .slice(0, 3)
+      .slice(0, 2)
       .map((ad, i) => ({
         id: `video-ad-${suggestion.id}-${i + 1}`,
         headline: ad.headline.trim(),
@@ -253,10 +343,14 @@ export async function generateVideoAdIdeas(
         format: "video",
         objective: ad.objective,
         image_prompt: ad.video_prompt.trim(), // Store video prompt in image_prompt field for compatibility
+        video_prompt: ad.video_prompt.trim(),
         suggested_tweet_text: `${ad.headline}\n\n${ad.body}\n\n${
           ad.call_to_action
         } ${ad.hashtags.join(" ")}`.trim(),
         video_status: "pending" as const,
+        bid_strategy: ad.bid_strategy || 'AUTO',
+        target_bid: ad.target_bid || 1000000,
+        targeting: ad.targeting || { keywords: [], interests: [] }
       }));
 
     // Generate videos for each ad
@@ -276,6 +370,8 @@ export async function generateVideoAdIdeas(
             aspect_ratio: "16:9",
             resolution: "720p",
             duration: 5,
+            negative_prompt:
+              "fast motion, rapid movement, multiple subjects moving, complex action, chaotic scene, blurry, low quality, distorted",
           });
 
           ad.video_url = result.video_url;
@@ -302,6 +398,8 @@ export async function generateVideoAdIdeas(
             aspect_ratio: "16:9",
             resolution: "720p",
             duration: 5,
+            negative_prompt:
+              "fast motion, rapid movement, multiple subjects moving, complex action, chaotic scene, blurry, low quality, distorted",
           });
 
           ad.video_id = videoResponse.video_id;

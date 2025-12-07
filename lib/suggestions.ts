@@ -1,5 +1,6 @@
 import { callGrok } from "./grokClient";
 import type { TopicSummary, BrandVoiceTweet, Suggestion } from "./types/tweet";
+import { getSuggestionHistory, addToHistory } from "./suggestionHistory";
 
 interface GenerateSuggestionsInput {
     topicSummaries: TopicSummary[];
@@ -17,7 +18,24 @@ export async function generateSuggestions(
         return [];
     }
 
-    const topTopics = topicSummaries.sort((a, b) => b.total - a.total).slice(0, 10);
+    // Load History
+    const history = getSuggestionHistory();
+    const recentTopics = new Set(history.recentTopics.map(t => t.toLowerCase().trim()));
+
+    // Filter out recently suggested topics
+    // We filter BEFORE picking top 10, so we get the "next best" 10.
+    const availableTopics = topicSummaries
+        .filter(t => !recentTopics.has(t.topic.toLowerCase().trim()))
+        .sort((a, b) => b.total - a.total);
+
+    // If we filtered out everything (rare), fall back to original list
+    const pool = availableTopics.length > 0 ? availableTopics : topicSummaries;
+    
+    if (availableTopics.length === 0) {
+        console.warn("[Suggestions] All topics were in recent history. Falling back to all topics.");
+    }
+
+    const topTopics = pool.slice(0, 10);
 
     const highPriorityTopics = topTopics
     .map(t => ({
@@ -60,6 +78,7 @@ export async function generateSuggestions(
         - Every suggestion must include a ready-to-post tweet (≤280 chars) in the brand's exact voice
         - Tone must match the brand's tweets above
         - Be specific, tactical, and realistic
+        - **IMPORTANT: Do NOT make suggestions about specific Twitter users or handles (e.g. "Reply to @user"). Focus on broader themes, product features, or customer sentiment patterns.**
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -97,6 +116,16 @@ export async function generateSuggestions(
         }
 
         const suggestions: Suggestion[] = rawList;
+        
+        // Save topics to history
+        const usedTopics = suggestions
+            .map(s => s.topic)
+            .filter(t => typeof t === 'string' && t.length > 0);
+            
+        if (usedTopics.length > 0) {
+            addToHistory(usedTopics);
+            console.log(`[Suggestions] Added ${usedTopics.length} topics to exclusion history.`);
+        }
 
         return suggestions
             .filter(s => {

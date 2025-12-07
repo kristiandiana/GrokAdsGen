@@ -42,7 +42,7 @@ module.exports = {
     })
   ],
   optimization: {
-    minimize: false // Keep readable for debugging
+    minimize: false, // Keep readable for debugging
   },
   devtool: false,
 };
