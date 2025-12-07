@@ -5,7 +5,8 @@ console.log('BrandPulse Extension: Content script loaded');
 // Track BrandPulse view state
 let isBrandPulseActive = false;
 let mainContentObserver: MutationObserver | null = null;
-let originalContent: HTMLElement | null = null;
+let reInjectTimeout: number | null = null;
+let hiddenReactElements: HTMLElement[] = [];
 
 // Wait for page to be ready
 if (document.readyState === 'loading') {
@@ -162,8 +163,10 @@ function tryInject(): boolean {
       // Check if clicked item is a navigation button (but not BrandPulse)
       const clickedItem = target.closest('.NavigationSidebar-item');
       if (clickedItem && clickedItem !== brandPulseItem) {
+        // Remove selection from BrandPulse
         brandPulseItem.classList.remove('is-selected');
-        isBrandPulseActive = false;
+        // Restore original content
+        restoreOriginalContent();
       }
     });
   }
@@ -175,16 +178,52 @@ function tryInject(): boolean {
 function setupMainContentObserver() {
   // Watch for changes to main content container (React re-renders)
   mainContentObserver = new MutationObserver((mutations) => {
-    if (isBrandPulseActive) {
-      // Check if our BrandPulse UI was removed
-      const dashboard = document.getElementById('brandpulse-dashboard');
-      if (!dashboard) {
-        console.log('BrandPulse: Dashboard was removed, re-injecting...');
-        // Small delay to let React finish its update
-        setTimeout(() => {
-          showBrandPulseView();
-        }, 100);
+    // CRITICAL: Check isBrandPulseActive FIRST, before any async operations
+    if (!isBrandPulseActive) {
+      return; // Exit immediately if BrandPulse is not active
+    }
+    
+    const brandPulseItem = document.getElementById('brandpulse-nav-item');
+    const isSelected = brandPulseItem?.classList.contains('is-selected');
+    
+    // Only proceed if BrandPulse is both active AND selected
+    if (!isSelected) {
+      // BrandPulse was deselected, clear any pending re-injection immediately
+      if (reInjectTimeout) {
+        clearTimeout(reInjectTimeout);
+        reInjectTimeout = null;
       }
+      return; // Exit - don't re-inject
+    }
+    
+    // Check if our BrandPulse UI was removed
+    const dashboard = document.getElementById('brandpulse-dashboard');
+    if (!dashboard) {
+      // Clear any pending re-injection
+      if (reInjectTimeout) {
+        clearTimeout(reInjectTimeout);
+      }
+      
+      // Debounce re-injection to avoid conflicts with React
+      reInjectTimeout = window.setTimeout(() => {
+        // Triple-check before re-injecting
+        if (!isBrandPulseActive) {
+          reInjectTimeout = null;
+          return;
+        }
+        
+        const brandPulseItemCheck = document.getElementById('brandpulse-nav-item');
+        const dashboardCheck = document.getElementById('brandpulse-dashboard');
+        
+        // Final check: BrandPulse must be active, selected, and dashboard missing
+        if (isBrandPulseActive && 
+            brandPulseItemCheck?.classList.contains('is-selected') && 
+            !dashboardCheck) {
+          console.log('BrandPulse: Dashboard was removed, re-injecting...');
+          showBrandPulseView();
+        }
+        reInjectTimeout = null;
+      }, 300);
     }
   });
 
@@ -206,6 +245,39 @@ function setupMainContentObserver() {
   observeMainContent();
 }
 
+function restoreOriginalContent() {
+  console.log('BrandPulse: Deactivating BrandPulse view');
+  
+  // Set flag IMMEDIATELY - this must happen before React starts rendering
+  isBrandPulseActive = false;
+  
+  // Clear any pending re-injection IMMEDIATELY
+  if (reInjectTimeout) {
+    clearTimeout(reInjectTimeout);
+    reInjectTimeout = null;
+  }
+  
+  // Remove our dashboard
+  const dashboard = document.getElementById('brandpulse-dashboard');
+  if (dashboard) {
+    dashboard.remove();
+  }
+  
+  // Restore React's hidden content
+  hiddenReactElements.forEach((element) => {
+    const originalDisplay = element.getAttribute('data-original-display');
+    if (originalDisplay !== null) {
+      element.style.display = originalDisplay || '';
+      element.removeAttribute('data-original-display');
+    } else {
+      element.style.display = '';
+    }
+  });
+  hiddenReactElements = [];
+  
+  // Let React handle the navigation naturally
+}
+
 function showBrandPulseView() {
   console.log('BrandPulse: Showing BrandPulse view');
   isBrandPulseActive = true;
@@ -218,15 +290,49 @@ function showBrandPulseView() {
     return;
   }
 
-  // Save original content if not already saved
-  if (!originalContent) {
-    originalContent = mainContainer.cloneNode(true) as any as HTMLElement;
+  // Clear any pending re-injection
+  if (reInjectTimeout) {
+    clearTimeout(reInjectTimeout);
+    reInjectTimeout = null;
   }
 
-  // Replace content with BrandPulse UI
-  mainContainer.innerHTML = createBrandPulseUI();
+  // Use a small delay to ensure React has finished any pending updates
+  setTimeout(() => {
+    const brandPulseItem = document.getElementById('brandpulse-nav-item');
+    if (!isBrandPulseActive || !brandPulseItem?.classList.contains('is-selected')) {
+      return;
+    }
 
-  console.log('BrandPulse: Dashboard injected into main content area');
+    // Check if dashboard already exists
+    let dashboard = document.getElementById('brandpulse-dashboard');
+    if (dashboard) {
+      // Already injected, just make sure it's visible
+      dashboard.style.display = '';
+      return;
+    }
+
+    // Hide React's content instead of destroying it
+    // Find all direct children that aren't our dashboard
+    hiddenReactElements = [];
+    Array.from(mainContainer.children).forEach((child) => {
+      if (child.id !== 'brandpulse-dashboard') {
+        const element = child as HTMLElement;
+        // Store original display style
+        const originalDisplay = element.style.display;
+        element.setAttribute('data-original-display', originalDisplay || '');
+        element.style.display = 'none';
+        hiddenReactElements.push(element);
+      }
+    });
+
+    // Create and append our dashboard
+    const dashboardDiv = document.createElement('div');
+    dashboardDiv.id = 'brandpulse-dashboard';
+    dashboardDiv.innerHTML = createBrandPulseUI();
+    mainContainer.appendChild(dashboardDiv);
+    
+    console.log('BrandPulse: Dashboard injected into main content area');
+  }, 50);
 }
 
 function createBrandPulseUI(): string {
