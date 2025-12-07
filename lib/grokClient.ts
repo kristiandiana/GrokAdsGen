@@ -19,10 +19,12 @@ interface ImageGenerationResponse {
 
 export async function callGrok(
     prompt: string,
-    model: 'grok-4-1-fast-reasoning',
+    model: string = 'grok-4-1-fast-reasoning',
     jsonMode = true,
     temperature = 0
 ) {
+    // For large/complex prompts, disable strict json_mode to avoid truncation issues
+    // We will parse manually.
     const response = await client.chat.completions.create({
         model,
         messages: [{ role: 'user', content: prompt}],
@@ -34,7 +36,30 @@ export async function callGrok(
         throw new Error('No content returned from Grok');
     }
 
-    return jsonMode ? JSON.parse(content.trim()) : content;
+    if (jsonMode) {
+        try {
+            // Clean up code fences if present
+            const cleanContent = content.replace(/```json\n?|\n?```/g, "").trim();
+            return JSON.parse(cleanContent);
+        } catch (e) {
+            console.error("Failed to parse JSON from Grok. Attempting repair...");
+            // Simple repair attempt: Find first '{' and last '}'
+            const start = content.indexOf('{');
+            const end = content.lastIndexOf('}');
+            if (start !== -1 && end !== -1) {
+                try {
+                    const jsonSubstr = content.substring(start, end + 1);
+                    return JSON.parse(jsonSubstr);
+                } catch (e2) {
+                    console.error("Repair failed. Content snippet:", content.substring(0, 200) + "...");
+                    throw new Error(`JSON Parse Error: ${e instanceof Error ? e.message : String(e)}`);
+                }
+            }
+            throw e;
+        }
+    }
+
+    return content;
 }
 
 export async function callGrokVision(prompt: string, imageUrl: string) {
@@ -81,7 +106,7 @@ export async function generateImage(prompt: string): Promise<GeneratedImage> {
 
     const json = (await response.json()) as ImageGenerationResponse;
 
-    if(!json.data[0].url) {
+    if(!json.data || !json.data[0] || !json.data[0].url) {
         throw new Error('No image URL returned from Grok');
     }
 
