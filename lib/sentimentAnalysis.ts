@@ -1,5 +1,5 @@
 import { callGrok } from "./grokClient";
-import { PublicMentionTweet, BrandVoiceTweet, AnnotatedMention, TopicSummary, Suggestion, AdIdea, GeneratedImage } from "./types/tweet";
+import { PublicMentionTweet, BrandVoiceTweet, AnnotatedMention, TopicSummary } from "./types/tweet";
 
 const ALLOWED_TOPICS = [
     'pricing',
@@ -24,6 +24,87 @@ export interface Analysis {
     generalSentiment: {
         score: number; //0-100
         label: 'very negative' | 'negative' | 'neutral' | 'positive' | 'very positive';
+    };
+}
+
+export function buildAnalysisFromAnnotations(annotated: AnnotatedMention[]): Analysis {
+    if (annotated.length === 0) {
+        return {
+            annotated: [],
+            topicSummaries: [],
+            generalSentiment: { score: 50, label: 'neutral'},
+        };
+    }
+
+    const topicMap = new Map<string, TopicSummary>();
+
+    for(const annotation of annotated) {
+        const topics = annotation.topics.length > 0 ? annotation.topics : ['other'];
+
+        for(const topic of topics) {
+            if(!topicMap.has(topic)) {
+                topicMap.set(topic, {
+                    topic,
+                    total: 0,
+                    positive: 0,
+                    neutral: 0,
+                    negative: 0,
+                    positive_pct: 0,
+                    sample_tweet_ids: [],
+                    intensity_breakdown: {
+                        low: 0,
+                        medium: 0,
+                        high: 0,
+                    },
+                });
+            }
+            
+            const summary = topicMap.get(topic);
+            if (summary) {
+                summary.total++;
+                summary[annotation.sentiment] += 1;
+                summary.intensity_breakdown[annotation.intensity]++;
+                if (summary.sample_tweet_ids.length < 3) {
+                    summary.sample_tweet_ids.push(annotation.tweet_id);
+                }
+            }
+        }
+    }
+
+    const topicSummaries: TopicSummary[] = Array.from(topicMap.values())
+    .map(summary => ({
+      ...summary,
+      positive_pct: summary.total > 0 ? Math.round((summary.positive / summary.total) * 100) : 0
+    }))
+    .sort((a, b) => b.total - a.total);
+
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const annotation of annotated) {
+        let score = annotation.sentiment === 'positive' 
+        ? annotation.sentiment_score 
+        : annotation.sentiment === 'negative' 
+            ? 1 - annotation.sentiment_score  // optional: mirror negative
+            : 0.5;
+        if (annotation.is_sarcasm) score = 1 - score;
+
+        const weight = annotation.intensity === 'high' ? 2 : annotation.intensity === 'medium' ? 1.3 : 1;
+        weightedSum += score * weight;
+        totalWeight += weight;
+    }
+
+    const generalScore = totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 100) : 50;
+    const generalLabel = 
+        generalScore >= 80 ? 'very positive' :
+        generalScore >= 60 ? 'positive' :
+        generalScore >= 40 ? 'neutral' :
+        generalScore >= 20 ? 'negative' :
+        'very negative';
+
+    return {
+        annotated,
+        topicSummaries,
+        generalSentiment: { score: generalScore, label: generalLabel },
     };
 }
 
@@ -120,85 +201,7 @@ export async function analyzeMentions(
             }
         }
 
-        if(annotated.length === 0) {
-            return {
-                annotated: [],
-                topicSummaries: [],
-                generalSentiment: { score: 50, label: 'neutral'},
-            }
-        }
-
-        // generating summary per topic, based on sentiment
-        const topicMap = new Map<string, TopicSummary>();
-
-        for(const annotation of annotated) {
-            const topics = annotation.topics.length > 0 ? annotation.topics : ['other'];
-
-            for(const topic of topics) {
-                if(!topicMap.has(topic)) {
-                    topicMap.set(topic, {
-                        topic,
-                        total: 0,
-                        positive: 0,
-                        neutral: 0,
-                        negative: 0,
-                        positive_pct: 0,
-                        sample_tweet_ids: [],
-                        intensity_breakdown: {
-                            low: 0,
-                            medium: 0,
-                            high: 0,
-                        },
-                    })
-                }
-                
-                const summary = topicMap.get(topic);
-                if (summary) {
-                    summary.total++;
-                    summary[annotation.sentiment] += 1;
-                    summary.intensity_breakdown[annotation.intensity]++;
-                    if (summary.sample_tweet_ids.length < 3) {
-                        summary.sample_tweet_ids.push(annotation.tweet_id);
-                    }
-                }
-            }
-        }
-
-        const topicSummaries: TopicSummary[] = Array.from(topicMap.values())
-        .map(summary => ({
-          ...summary,
-          positive_pct: summary.total > 0 ? Math.round((summary.positive / summary.total) * 100) : 0
-        }))
-        .sort((a, b) => b.total - a.total);
-
-        let weightedSum = 0;
-        let totalWeight = 0;
-        for (const annotation of annotated) {
-            let score = annotation.sentiment === 'positive' 
-            ? annotation.sentiment_score 
-            : annotation.sentiment === 'negative' 
-                ? 1 - annotation.sentiment_score  // optional: mirror negative
-                : 0.5;
-            if (annotation.is_sarcasm) score = 1 - score;
-
-            const weight = annotation.intensity === 'high' ? 2 : annotation.intensity === 'medium' ? 1.3 : 1;
-            weightedSum += score * weight;
-            totalWeight += weight;
-        }
-
-        const generalScore = totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 100) : 50;
-        const generalLabel = 
-            generalScore >= 80 ? 'very positive' :
-            generalScore >= 60 ? 'positive' :
-            generalScore >= 40 ? 'neutral' :
-            generalScore >= 20 ? 'negative' :
-            'very negative';
-
-        return {
-            annotated,
-            topicSummaries,
-            generalSentiment: { score: generalScore, label: generalLabel },
-        }
+        return buildAnalysisFromAnnotations(annotated);
 
 
         
