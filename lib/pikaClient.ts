@@ -22,7 +22,7 @@ interface GenerateVideoOptions {
 
 /**
  * Generate a video from a text prompt using Pika Labs via Fal.ai
- * @param prompt - Text description of the video to generate (keep it simple, minimal motion for best results)
+ * @param prompt - Text description of the video to generate
  * @param options - Optional video generation parameters
  * @returns Promise with video URL
  */

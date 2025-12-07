@@ -1,4 +1,4 @@
-// Shared TypeScript types
+// Shared TypeScript types for the extension
 
 export type Sentiment = "positive" | "negative" | "neutral";
 export type Prominence = "high" | "medium" | "low";
@@ -45,15 +45,15 @@ export interface Tweet {
 }
 
 export interface Insight {
-  type: 'sentiment' | 'topic' | 'suggestion';
+  type: "sentiment" | "topic" | "suggestion";
   title: string;
   description: string;
-  priority?: 'high' | 'medium' | 'low';
+  priority?: "high" | "medium" | "low";
 }
 
 export interface ContentGenerationRequest {
   prompt: string;
-  type: 'meme' | 'ad';
+  type: "meme" | "ad";
 }
 
 export interface ContentGenerationResponse {
@@ -61,4 +61,3 @@ export interface ContentGenerationResponse {
   imageUrl?: string;
   suggestions?: string[];
 }
-

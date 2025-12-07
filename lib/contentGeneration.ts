@@ -21,13 +21,6 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
 }> {
   const { suggestion, voice_samples, brand_handle } = input;
 
-  // 1. Analyze Visual Style (if any voice samples have images)
-  const allMedia = voice_samples.flatMap((v) => v.media || []);
-  const visualAnalysis = await analyzeBrandVisuals(allMedia);
-  const visualStyleContext = visualAnalysis.consolidatedStyle
-    ? `\nVISUAL STYLE GUIDE (Must match this aesthetic): ${visualAnalysis.consolidatedStyle}\n`
-    : "";
-
   const voiceContext =
     voice_samples.length > 0
       ? `Brand's exact tone and style from recent tweets (MUST MATCH THIS VOICE):\n${voice_samples
@@ -39,7 +32,6 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
   const suggestionContext = `ACTION TO TAKE:\nTitle: ${suggestion.title}\nRationale: ${suggestion.rationale}\nTopic: ${suggestion.topic}\nPriority: ${suggestion.priority}\nTone: ${suggestion.tone}\nExample tweet: "${suggestion.suggested_copy}"`;
 
   const prompt = `${voiceContext}
-        ${visualStyleContext} 
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
@@ -104,7 +96,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
           ]
         }
 
-        No extra text.`;
+        No extra text. Respond with ONLY raw JSON, no code fences, no explanations, no trailing commas.`;
 
   try {
     const result = await callGrok(prompt, "grok-4-1-fast-reasoning", true, 0.7); // Higher temp for creativity
@@ -313,7 +305,7 @@ export async function generateVideoAdIdeas(
           ]
         }
 
-        No extra text.`;
+        No extra text. Respond with ONLY raw JSON, no code fences, no explanations, no trailing commas.`;
 
   try {
     const result = await callGrok(prompt, "grok-4-1-fast-reasoning", true, 0.7);
@@ -418,15 +410,6 @@ export async function generateVideoAdIdeas(
             video_id: videoResponse.video_id,
             status: videoResponse.status,
           });
-
-          if (videoResponse?.video_id) {
-            console.log(
-              "[BrandPulse][ads] video async generated",
-              ad.id,
-              "id:",
-              videoResponse.video_id
-            );
-          }
         }
       } catch (err) {
         console.error(`Failed to generate video for ad ${ad.id}:`, err);

@@ -1,2 +1,4 @@
-@import "tailwindcss";
-
+/* Tailwind placeholder to satisfy bundling */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -281,9 +281,9 @@ class StateManager {
       const response = await fetchTopics(brand);
       
       if (response.success && response.data) {
-        const topics = response.data.topics || [];
-        const posts = topics.flatMap((t) => t.posts);
-        const ads = topics.flatMap((t) => t.ads);
+        const topics: Topic[] = response.data.topics || [];
+        const posts: Post[] = topics.flatMap((t: Topic) => t.posts);
+        const ads: Ad[] = topics.flatMap((t: Topic) => t.ads);
         
         this.setState({
           topics: [...topics],
@@ -322,6 +322,9 @@ class StateManager {
       const topics = this.mapInsightsToTopics(insights);
       const posts = topics.flatMap((t) => t.posts);
       const ads = topics.flatMap((t) => t.ads);
+
+      console.log("[state] generated_video_ads", insights.generated_video_ads);
+      console.log("[state] generated_videos", insights.generated_videos);
 
       this.setState({
         topics,
@@ -375,6 +378,13 @@ class StateManager {
         this.getTopicForAdIdea(adIdea, insights.suggestions) || "general";
       const adsForTopic = generatedAdsByTopic.get(topic) || [];
       const videoInfo = videoByAdId.get(adIdea.id);
+
+      // Skip media-first ads that never produced a usable asset
+      const imageUrl = imageByAdId.get(adIdea.id);
+      const isVideoAd = adIdea.format === "video";
+      if (isVideoAd && !videoInfo?.url) return;
+      if (!isVideoAd && !imageUrl) return;
+
       adsForTopic.push({
         id: adIdea.id,
         title: adIdea.headline || adIdea.title || "Ad",
@@ -382,7 +392,7 @@ class StateManager {
         format: (adIdea.format as Ad["format"]) || "single image",
         cta: adIdea.call_to_action || "Learn more",
         description: adIdea.body,
-        imageUrl: imageByAdId.get(adIdea.id),
+        imageUrl,
         videoUrl: videoInfo?.url,
       });
       generatedAdsByTopic.set(topic, adsForTopic);

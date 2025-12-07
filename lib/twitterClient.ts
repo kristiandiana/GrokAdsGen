@@ -9,8 +9,7 @@ const BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN || process.env.X_BEARER_TO
 
 const BASE_URL = "https://api.twitter.com/2/tweets/search/recent";
 
-// Increase default limit to get a robust sample
-export async function searchPublicMentions(brand: string, targetFilteredCount = 100) {
+export async function searchPublicMentions(brand: string, limit = 50) {
   const query = buildQuery(brand);
   
   // We'll fetch in batches of 100 (max allowed per request)
@@ -63,7 +62,7 @@ export async function searchPublicMentions(brand: string, targetFilteredCount = 
 }
 
 // 🔥 NEW: Fetch tweets *by the brand itself*
-export async function searchBrandVoiceTweets(brand: string, limit = 20) {
+export async function searchBrandVoiceTweets(brand: string, limit = 50) {
   const brandVoiceQuery = `from:${brand} -is:retweet lang:en`;
   const url = `${BASE_URL}?` +
     `query=${encodeURIComponent(brandVoiceQuery)}` +
