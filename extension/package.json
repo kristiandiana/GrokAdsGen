@@ -1,0 +1,17 @@
+{
+  "name": "brandpulse-extension",
+  "version": "0.1.0",
+  "description": "Chrome extension for BrandPulse Dashboard",
+  "scripts": {
+    "build": "tsc && npm run copy-assets",
+    "copy-assets": "copyfiles -u 1 public/**/* dist/ && copyfiles -u 2 src/popup/*.html src/popup/*.css dist/popup/",
+    "watch": "tsc --watch",
+    "dev": "npm run watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "copyfiles": "^2.4.1",
+    "typescript": "^5.3.3"
+  }
+}
+

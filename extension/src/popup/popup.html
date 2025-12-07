@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrandPulse</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>BrandPulse</h1>
+      <p class="subtitle">Brand insights & content generation</p>
+    </header>
+    
+    <div class="content">
+      <div class="status" id="status">
+        <span class="status-indicator"></span>
+        <span>Ready</span>
+      </div>
+      
+      <div class="actions">
+        <button id="fetch-insights-btn" class="btn btn-primary">
+          Fetch Insights
+        </button>
+        <button id="generate-content-btn" class="btn btn-secondary">
+          Generate Content
+        </button>
+      </div>
+      
+      <div id="results" class="results"></div>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
+

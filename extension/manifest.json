@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "BrandPulse Dashboard Extension",
+  "version": "0.1.0",
+  "description": "Enhance X Ads Console with brand insights and content generation",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": [
+    "https://ads.twitter.com/*",
+    "https://ads.x.com/*",
+    "http://localhost:3000/*"
+  ],
+  "background": {
+    "service_worker": "dist/background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://ads.twitter.com/*", "https://ads.x.com/*"],
+      "js": ["dist/content/inject.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "dist/popup/popup.html"
+  }
+}
