@@ -43,20 +43,34 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
-        Generate exactly 4 promotable ad ideas that directly address the suggestion above.
+        Generate exactly 2 promotable ad ideas that directly address the suggestion above.
 
         Rules:
         - Match the brand's voice 100% from the tweets
-        - Match the brand's VISUAL STYLE for image prompts${
-          visualAnalysis.consolidatedStyle
-            ? ` - incorporate the lighting, color palette, mood, and composition from the Visual Style Guide above`
-            : ""
-        }
-        - Vary objectives: one awareness, one engagement, one conversions, one retention
+        - Match the brand's VISUAL STYLE for image prompts
+        - Vary objectives: one awareness, one engagement (or conversions)
         - Format: single_image (1024x1024)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
-        - Image prompt must be impactful, realistic, clean/sleek, and with copywriting
-        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood, composition)
+        - Image prompt must be **PHOTOREALISTIC**, cinematic, and high-fidelity. 
+        - AVOID: "AI sheen", "cartoonish", "over-saturated", "generic illustration".
+        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood)
+        - If Visual Style Guide says "grainy/film", explicitly ask for "film grain, shot on 35mm".
+        - If Visual Style Guide says "minimalist", explicitly ask for "clean composition, negative space".
+        
+        New: Visual Variety Requirements (Must be distinct for each ad):
+        - Ad 1: Macro/Close-up product shot (high detail)
+        - Ad 2: Wide environmental/lifestyle shot (context)
+        
+        New: Copy Adherence Requirement:
+        - The image prompt MUST include the key noun/subject from the headline.
+        - Example: If headline mentions "CyberTruck", image prompt must specify "CyberTruck".
+        
+        New: Visual Balance Requirements:
+        - HERO OBJECT: The main product (e.g. car, phone, drink) must be the clear focal point (60% of frame).
+        - BACKGROUND: Must subtly reflect the Copywriting theme. 
+          * Example: If headline says "Freedom", background is open road/sky.
+          * Example: If headline says "Precision", background is clean/geometric studio.
+        - STYLE: Must be 80% based on the "Visual Style Guide" provided above, and 20% creative adaptation to the new copy.
         
         New: Recommend a bidding strategy and target bid (in micro-currency).
         - bid_strategy: 'AUTO' | 'MAX' | 'TARGET'
@@ -77,14 +91,8 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
               "body": string,
               "call_to_action": string,
               "hashtags": string[],
-              "objective": "awareness" | "engagement" | "conversions" | "retention",
-              "image_prompt": string (detailed, high-quality visual description${
-                visualAnalysis.consolidatedStyle
-                  ? ` matching the visual style: ${visualAnalysis.consolidatedStyle
-                      .replace("Visual Style Pattern: ", "")
-                      .substring(0, 150)}`
-                  : " with professional composition"
-              }),
+              "objective": "awareness" | "engagement" | "conversions",
+              "image_prompt": string (detailed, high-quality visual description matching style guide),
               "bid_strategy": "AUTO" | "MAX" | "TARGET",
               "target_bid": number,
               "targeting": {
@@ -92,7 +100,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
                 "interests": string[]
               }
             },
-            ... (exactly 4 items)
+            ... (exactly 2 items)
           ]
         }
 
@@ -126,7 +134,7 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
           typeof ad.image_prompt === "string" &&
           ad.image_prompt.length > 50
       )
-      .slice(0, 4)
+      .slice(0, 2)
       .map((ad, i) => ({
         id: `ad-${suggestion.id}-${i + 1}`,
         headline: ad.headline.trim(),
@@ -234,7 +242,7 @@ export async function generateVideoAdIdeas(
         ${suggestionContext}
 
         You are a world-class X/Twitter ad strategist and copywriter for ${brand_handle}.
-        Generate exactly 3 video ad ideas that directly address the suggestion above.
+        Generate exactly 2 video ad ideas that directly address the suggestion above.
 
         Rules:
         - Match the brand's voice 100% from the tweets
@@ -301,7 +309,7 @@ export async function generateVideoAdIdeas(
                 "interests": string[]
               }
             },
-            ... (exactly 3 items)
+            ... (exactly 2 items)
           ]
         }
 
@@ -333,7 +341,7 @@ export async function generateVideoAdIdeas(
           typeof ad.video_prompt === "string" &&
           ad.video_prompt.length > 50
       )
-      .slice(0, 3)
+      .slice(0, 2)
       .map((ad, i) => ({
         id: `video-ad-${suggestion.id}-${i + 1}`,
         headline: ad.headline.trim(),

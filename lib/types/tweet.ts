@@ -47,7 +47,7 @@ export type PublicMentionTweet = {
   export type ScoredMention = PublicMentionTweet & {
     engagement_score: number;
   };
-
+  
   // sentiment analysis of the public mention tweet
   export type AnnotatedMention = {
     tweet_id: string;

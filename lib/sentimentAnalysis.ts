@@ -1,22 +1,9 @@
-import { callGrok } from "./grokClient";
 import { PublicMentionTweet, BrandVoiceTweet, AnnotatedMention, TopicSummary } from "./types/tweet";
+import * as vader from 'vader-sentiment';
+import keyword_extractor from 'keyword-extractor';
 
-const ALLOWED_TOPICS = [
-    'pricing',
-    'support',
-    'ux',
-    'performance',
-    'features',
-    'billing',
-    'onboarding',
-    'reliability',
-    'speed',
-    'bugs',
-    'customer service',
-    'value',
-    'competition',
-    'updates',
-  ] as const;
+// Removing fixed ALLOWED_TOPICS to allow dynamic clustering
+// const ALLOWED_TOPICS = [...]
 
 export interface Analysis {
     annotated: AnnotatedMention[];
@@ -39,12 +26,15 @@ export function buildAnalysisFromAnnotations(annotated: AnnotatedMention[]): Ana
     const topicMap = new Map<string, TopicSummary>();
 
     for(const annotation of annotated) {
-        const topics = annotation.topics.length > 0 ? annotation.topics : ['other'];
+        const topics = annotation.topics.length > 0 ? annotation.topics : ['general'];
 
         for(const topic of topics) {
-            if(!topicMap.has(topic)) {
-                topicMap.set(topic, {
-                    topic,
+            // Normalize topic (lowercase) to ensure clustering
+            const normalizedTopic = topic.toLowerCase().trim();
+            
+            if(!topicMap.has(normalizedTopic)) {
+                topicMap.set(normalizedTopic, {
+                    topic: normalizedTopic,
                     total: 0,
                     positive: 0,
                     neutral: 0,
@@ -59,7 +49,7 @@ export function buildAnalysisFromAnnotations(annotated: AnnotatedMention[]): Ana
                 });
             }
             
-            const summary = topicMap.get(topic);
+            const summary = topicMap.get(normalizedTopic);
             if (summary) {
                 summary.total++;
                 summary[annotation.sentiment] += 1;
@@ -120,91 +110,75 @@ export async function analyzeMentions(
             }
         }
 
-        const batchSize = 25;
+        console.log(`[VADER] Starting fast sentiment analysis on ${mentions.length} tweets...`);
         const annotated: AnnotatedMention[] = [];
 
-        const voiceContext = voice_samples.length > 0 ? 
-            `These are the brand's recent tweets (for tone reference only): \n${voice_samples.map(tweet => `- ${tweet.text}`).join('\n')}\n` : '';
-        
-        for (let i = 0; i < mentions.length; i += batchSize) {
-            const batch = mentions.slice(i, i + batchSize);
+        for (const mention of mentions) {
+            try {
+                // 1. Calculate Sentiment using VADER
+                // VADER returns { neg, neu, pos, compound }
+                const result = vader.SentimentIntensityAnalyzer.polarity_scores(mention.text);
+                const compound = result.compound; // -1.0 to 1.0
 
-            const prompt = `${voiceContext}You are an expert social-media sentiment analyst for brands.
-                Analyze the following ${batch.length} public mentions of a brand.
-                
-                CRITICAL INSTRUCTION: You MUST return a JSON object containing an array under the key "mentions".
-                The array MUST have exactly ${batch.length} objects, one for each input tweet.
-                Do not skip any tweets.
+                // Determine Sentiment Label
+                let sentiment: 'positive' | 'neutral' | 'negative';
+                if (compound >= 0.05) sentiment = 'positive';
+                else if (compound <= -0.05) sentiment = 'negative';
+                else sentiment = 'neutral';
 
-                For each mention, return an object with these exact fields:
-                {
-                "tweet_id": string,
-                "sentiment": "positive" | "neutral" | "negative",
-                "sentiment_score": number (0.00 to 1.00, higher = more positive),
-                "topics": string[] (1–2 topics max, lowercase, choose ONLY from: ${ALLOWED_TOPICS.join(', ')}),
-                "key_phrase": string | null (short quote ≤8 words that triggered the label),
-                "is_sarcasm": boolean,
-                "intensity": "low" | "medium" | "high"
-                }
+                // Determine Intensity
+                // 0.05 - 0.3 = low
+                // 0.3 - 0.6 = medium
+                // 0.6+ = high
+                // For neutral, we can use the 'neu' score or just default to low
+                const absScore = Math.abs(compound);
+                let intensity: 'low' | 'medium' | 'high' = 'low';
+                if (absScore > 0.6) intensity = 'high';
+                else if (absScore > 0.3) intensity = 'medium';
 
-                Mentions to analyze:
-                ${batch.map((m) => `ID: ${m.id}
-                Text: "${m.text}"`).join('\n\n')}
+                // Normalize Score to 0-1 for our internal format
+                // VADER is -1 to 1. 
+                // If we want 0-1 where 1 is "very positive" and 0 is "very negative", we could do (compound + 1) / 2
+                // BUT our type says: sentiment_score: number (0.00 to 1.00)
+                // And usage usually implies "confidence in the label" or "positivity".
+                // Let's use (compound + 1) / 2 for a global positivity index, 
+                // OR use Math.abs(compound) if it represents "strength of current sentiment".
+                // Looking at `buildAnalysisFromAnnotations`:
+                // let score = annotation.sentiment === 'positive' ? annotation.sentiment_score : annotation.sentiment === 'negative' ? 1 - annotation.sentiment_score ...
+                // This implies sentiment_score is a "magnitude of match" or "probability".
+                // Let's stick to mapping VADER compound directly to a 0-1 positivity scale:
+                const normalizedScore = (compound + 1) / 2;
 
-                Return valid JSON only. Structure: { "mentions": [...] }`;
+                // 2. Extract Topics using Keyword Extractor
+                // This is a naive extraction but fast.
+                const extractionResult = keyword_extractor.extract(mention.text, {
+                    language: "english",
+                    remove_digits: true,
+                    return_changed_case: true,
+                    remove_duplicates: true,
+                });
 
-            const result = await callGrok(prompt, 'grok-4-1-fast-reasoning', true, 0);
+                // Take top 2 keywords as topics, exclude common brand names if needed (not implementing blacklist here yet)
+                const topics = extractionResult.slice(0, 2);
+                if (topics.length === 0) topics.push('general');
 
-            console.log('--- Raw Grok Response ---');
-            console.log(JSON.stringify(result, null, 2));
-            console.log('-------------------------');
-
-            // Handle new structure { mentions: [...] } or fallback to array/single object
-            let rawList: any[] = [];
-            if (result && typeof result === 'object') {
-                if ('mentions' in result && Array.isArray((result as any).mentions)) {
-                    rawList = (result as any).mentions;
-                } else if (Array.isArray(result)) {
-                    rawList = result;
-                } else {
-                    rawList = [result];
-                }
-            }
-
-            const batchAnnotated: AnnotatedMention[] = rawList;
-
-            //for validation
-            // made the decision not to add malformed items from grok
-            for (const item of batchAnnotated) {
-                const isValid =
-                  item &&
-                  typeof item.tweet_id === 'string' &&
-                  ['positive', 'neutral', 'negative'].includes(item.sentiment) &&
-                  typeof item.sentiment_score === 'number' &&
-                  item.sentiment_score >= 0 && item.sentiment_score <= 1 &&
-                  Array.isArray(item.topics) &&
-                  item.topics.every((t: string) => ALLOWED_TOPICS.includes(t as any)) &&
-                  ['low', 'medium', 'high'].includes(item.intensity);
-          
-                if (isValid) {
-                  annotated.push({
-                    tweet_id: item.tweet_id,
-                    sentiment: item.sentiment,
-                    sentiment_score: item.sentiment_score,
-                    topics: item.topics,
+                // 3. Construct AnnotatedMention
+                annotated.push({
+                    tweet_id: mention.id,
+                    sentiment,
+                    sentiment_score: normalizedScore, // 0.0 (neg) to 1.0 (pos)
+                    topics,
+                    key_phrase: topics[0] || null,
+                    is_sarcasm: false, // VADER doesn't detect sarcasm reliably
+                    intensity,
                     analyzed_at: Date.now(),
-                    key_phrase: item.key_phrase ?? null,
-                    is_sarcasm: !!item.is_sarcasm,
-                    intensity: item.intensity,
-                  });
-                }
+                });
+
+            } catch (err) {
+                console.error(`[VADER] Error analyzing tweet ${mention.id}:`, err);
             }
         }
 
+        console.log(`[VADER] Completed analysis. Annotated ${annotated.length} tweets.`);
         return buildAnalysisFromAnnotations(annotated);
-
-
-        
-
-
     }

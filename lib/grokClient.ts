@@ -30,22 +30,18 @@ interface ImageGenerationResponse {
 }
 
 export async function callGrok(
-  prompt: string,
-  model: string = 'grok-4-1-fast-reasoning',
-  jsonMode = true,
-  temperature = 0
+    prompt: string,
+    model: string = 'grok-4-1-fast-reasoning',
+    jsonMode = true,
+    temperature = 0
 ) {
-  const grokClient = getClient();
-  const response = await grokClient.chat.completions.create({
-    model,
-    messages: [{ role: 'user', content: prompt}],
-    temperature,
-  });
-
-  const content = response.choices[0].message.content;
-  if (!content) {
-    throw new Error('No content returned from Grok');
-  }
+    // For large/complex prompts, disable strict json_mode to avoid truncation issues
+    // We will parse manually.
+    const response = await client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: prompt}],
+        temperature,
+    });
 
   if (jsonMode) {
       try {
@@ -76,7 +72,30 @@ export async function callGrok(
       }
   }
 
-  return content;
+    if (jsonMode) {
+        try {
+            // Clean up code fences if present
+            const cleanContent = content.replace(/```json\n?|\n?```/g, "").trim();
+            return JSON.parse(cleanContent);
+        } catch (e) {
+            console.error("Failed to parse JSON from Grok. Attempting repair...");
+            // Simple repair attempt: Find first '{' and last '}'
+            const start = content.indexOf('{');
+            const end = content.lastIndexOf('}');
+            if (start !== -1 && end !== -1) {
+                try {
+                    const jsonSubstr = content.substring(start, end + 1);
+                    return JSON.parse(jsonSubstr);
+                } catch (e2) {
+                    console.error("Repair failed. Content snippet:", content.substring(0, 200) + "...");
+                    throw new Error(`JSON Parse Error: ${e instanceof Error ? e.message : String(e)}`);
+                }
+            }
+            throw e;
+        }
+    }
+
+    return content;
 }
 
 export async function callGrokVision(prompt: string, imageUrl: string) {
@@ -124,16 +143,16 @@ export async function generateImage(prompt: string): Promise<GeneratedImage> {
 
   const json = (await response.json()) as ImageGenerationResponse;
 
-  if(!json.data || !json.data[0] || !json.data[0].url) {
-      throw new Error('No image URL returned from Grok');
-  }
+    if(!json.data || !json.data[0] || !json.data[0].url) {
+        throw new Error('No image URL returned from Grok');
+    }
 
-  return {
-      ad_idea_id: '',
-      image_url: json.data[0].url,
-      prompt_used: json.data[0].revised_prompt || prompt,
-      generated_at: new Date().toISOString(),
-      width: 1024,
-      height: 1024,
-  }
+    return {
+        ad_idea_id: '',
+        image_url: json.data[0].url,
+        prompt_used: json.data[0].revised_prompt || prompt,
+        generated_at: new Date().toISOString(),
+        width: 1024,
+        height: 1024,
+    }
 }
