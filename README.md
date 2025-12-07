@@ -146,4 +146,4 @@ The backend will:
 
 ## Screenshots
 
-_[Add your screenshots here]_
+![BrandPulse Dashboard](styles/ss1.png)
