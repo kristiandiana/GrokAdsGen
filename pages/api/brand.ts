@@ -53,10 +53,7 @@ function filterSpam(tweets: PublicMentionTweet[]): PublicMentionTweet[] {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{
-    public_mentions: ScoredMention[];
-    brand_voice: BrandVoiceTweet[];
-  }>
+  res: NextApiResponse<any>
 ) {
   try {
     const brand = (req.query.brand as string) || "tesla";

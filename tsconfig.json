@@ -5,6 +5,8 @@
       "dom.iterable",
       "esnext"
     ],
+    "target": "es2020",
+    "downlevelIteration": true,
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -23,6 +25,7 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "scripts/**/*"
   ]
 }

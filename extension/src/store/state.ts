@@ -281,9 +281,9 @@ class StateManager {
       const response = await fetchTopics(brand);
       
       if (response.success && response.data) {
-        const topics = response.data.topics || [];
-        const posts = topics.flatMap((t) => t.posts);
-        const ads = topics.flatMap((t) => t.ads);
+        const topics: Topic[] = response.data.topics || [];
+        const posts: Post[] = topics.flatMap((t: Topic) => t.posts);
+        const ads: Ad[] = topics.flatMap((t: Topic) => t.ads);
         
         this.setState({
           topics: [...topics],

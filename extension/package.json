@@ -1,0 +1,29 @@
+{
+  "name": "brandpulse-extension",
+  "version": "0.1.0",
+  "description": "Chrome extension for BrandPulse Dashboard",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "watch": "webpack --config webpack.config.js --watch",
+    "dev": "npm run watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/chrome": "^0.0.268",
+    "autoprefixer": "^10.4.22",
+    "copy-webpack-plugin": "^13.0.1",
+    "copyfiles": "^2.4.1",
+    "css-loader": "^7.1.2",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.2.0",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^4.1.17",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.3.3",
+    "webpack": "^5.103.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "vis-network": "^10.0.2"
+  }
+}
