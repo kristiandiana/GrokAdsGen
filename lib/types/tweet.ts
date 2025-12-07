@@ -3,7 +3,7 @@ export type PublicMentionTweet = {
     id: string;
     text: string;
     author_id: string;
-    created_at: string;
+    created_at?: string;
     public_metrics?: {
       like_count: number;
       retweet_count: number;
@@ -17,20 +17,8 @@ export type PublicMentionTweet = {
   export type BrandVoiceTweet = {
     id: string;
     text: string;
-    created_at: string;
-    public_metrics?: { 
-        like_count: number; 
-        retweet_count: number;
-        reply_count: number;
-        quote_count: number;
-        impression_count?: number;
-    };
-
-    //nice to haves
-    isEdited: boolean;
-    isReply?: boolean;
-    isQuote?: boolean;
-    isRetweet?: boolean;
+    created_at?: string;
+    public_metrics?: { like_count: number; retweet_count: number };
   };
   
   // sentiment analysis of the public mention tweet
