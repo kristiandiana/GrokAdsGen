@@ -600,8 +600,9 @@ function showBrandPulseView() {
     dashboardDiv.innerHTML = createBrandPulseUI();
     mainContainer.appendChild(dashboardDiv);
 
-    // Initialize state manager with sample data (will be replaced with API data)
+    // Initialize with sample data for immediate render, then hydrate from API
     stateManager.setTopics(sampleTopics);
+    fetchInsightsAndHydrate();
 
     // Subscribe to state changes to update UI reactively
     stateManager.subscribe((state) => {
@@ -637,6 +638,14 @@ function showBrandPulseView() {
 
     console.log("BrandPulse: Dashboard injected into main content area");
   }, 50);
+}
+
+async function fetchInsightsAndHydrate(brand?: string) {
+  try {
+    await stateManager.fetchInsightsFromAPI(brand);
+  } catch (err) {
+    console.error("BrandPulse: Failed to fetch insights, using sample data", err);
+  }
 }
 
 function setupDashboardInteractions(dashboard: HTMLElement) {
@@ -1176,186 +1185,6 @@ function createBrandPulseUI(): string {
             </div>
           </div>
         </div>
-
-        <!-- Example Sentiment Topic 2 -->
-        <div class="sentiment-topic" style="
-          background: #ffffff;
-          border: 1px solid #e1e8ed;
-          border-radius: 8px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-          overflow: hidden;
-        ">
-          <button class="topic-header" style="
-            width: 100%;
-            padding: 20px;
-            text-align: left;
-            background: #ffffff;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 16px;
-            font-weight: 600;
-            color: #14171a;
-            transition: background 0.2s;
-          " onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='#ffffff'">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span class="topic-icon" style="
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: #17bf63;
-                display: inline-block;
-              "></span>
-              <span class="topic-text">People love the new colorway of shoes</span>
-              <span style="
-                font-size: 12px;
-                font-weight: 500;
-                color: #657786;
-                background: #f7f9fa;
-                padding: 4px 8px;
-                border-radius: 12px;
-              ">Medium Prominence</span>
-            </div>
-            <span class="topic-arrow" style="
-              transition: transform 0.2s;
-              color: #657786;
-            ">▼</span>
-          </button>
-          <div class="topic-content" style="
-            display: none;
-            padding: 0 20px 20px 20px;
-          ">
-            <div style="margin-bottom: 20px;">
-              <h3 style="
-                font-size: 14px;
-                font-weight: 600;
-                color: #657786;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                margin: 0 0 12px 0;
-              ">Relevant Tweets</h3>
-              <div class="tweets-list" style="
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-              ">
-                <div class="tweet-item" style="
-                  padding: 12px;
-                  background: #f7f9fa;
-                  border-radius: 8px;
-                  position: relative;
-                  padding-left: 20px;
-                ">
-                  <div style="
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    bottom: 0;
-                    width: 4px;
-                    background: #17bf63;
-                    border-radius: 8px 0 0 8px;
-                  "></div>
-                  <div style="font-size: 14px; color: #14171a; margin-bottom: 4px;">
-                    "The new colorway is absolutely fire! 🔥"
-                  </div>
-                  <div style="font-size: 12px; color: #657786;">
-                    @username3 • 1h ago • 120 retweets
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <button class="actionable-header" style="
-                width: 100%;
-                padding: 12px;
-                text-align: left;
-                background: #f7f9fa;
-                border: none;
-                outline: none;
-                border-radius: 6px;
-                cursor: pointer;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                font-size: 14px;
-                font-weight: 600;
-                color: #14171a;
-                margin-bottom: 12px;
-              " onmouseover="this.style.background='#e1e8ed'" onmouseout="this.style.background='#f7f9fa'">
-                <span>Actionable Steps & Ad Suggestions</span>
-                <span class="actionable-arrow" style="transition: transform 0.2s; color: #657786;">▼</span>
-              </button>
-              <div class="actionable-content" style="display: none;">
-                <div class="ad-suggestion" style="
-                  background: #ffffff;
-                  border: 1px solid #e1e8ed;
-                  border-radius: 8px;
-                  padding: 16px;
-                  margin-bottom: 12px;
-                ">
-                  <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-                    <div style="
-                      width: 120px;
-                      height: 120px;
-                      background: #f7f9fa;
-                      border-radius: 6px;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      color: #657786;
-                      font-size: 12px;
-                      flex-shrink: 0;
-                    ">Image/Video</div>
-                    <div style="flex: 1;">
-                      <h4 style="
-                        font-size: 14px;
-                        font-weight: 600;
-                        margin: 0 0 8px 0;
-                        color: #14171a;
-                      ">Ad Suggestion: Showcase New Colorway</h4>
-                      <div style="
-                        font-size: 12px;
-                        color: #657786;
-                        margin-bottom: 12px;
-                      ">
-                        <div>Target: Positive sentiment</div>
-                        <div>Format: Video showcase</div>
-                        <div>CTA: "Shop Now"</div>
-                      </div>
-                      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <label style="
-                          display: flex;
-                          align-items: center;
-                          gap: 6px;
-                          font-size: 12px;
-                          color: #14171a;
-                          cursor: pointer;
-                        ">
-                          <input type="checkbox" style="cursor: pointer;">
-                          Use in campaign
-                        </label>
-                        <label style="
-                          display: flex;
-                          align-items: center;
-                          gap: 6px;
-                          font-size: 12px;
-                          color: #14171a;
-                          cursor: pointer;
-                        ">
-                          <input type="checkbox" style="cursor: pointer;">
-                          Generate variations
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   `;
@@ -1469,11 +1298,8 @@ function initializeGraphView(dashboard: HTMLElement) {
       chosen: false, // Disable highlight effect to prevent bold outline on click
     },
     edges: {
-      smooth: {
-        enabled: true,
-        type: "straight",
-        roundness: 0,
-      },
+      // Disable smoothing to avoid invalid "straight" type and keep edges crisp
+      smooth: false,
     },
     physics: {
       enabled: false, // Disable physics since we're using fixed positions
@@ -2118,17 +1944,24 @@ function showContentView(
     `;
 
     topic.ads.forEach((ad: Ad) => {
-      contentHTML += `
-          <div class="ad-suggestion" style="
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 2px solid #3b82f6;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(59, 130, 246, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(59, 130, 246, 0.1)'">
-            <div style="display: flex; gap: 20px; margin-bottom: 16px;">
-              <div style="
+      const mediaBlock = ad.imageUrl
+        ? `<img src="${ad.imageUrl}" alt="${ad.title}" style="
+                width: 140px;
+                height: 140px;
+                object-fit: cover;
+                border-radius: 10px;
+                flex-shrink: 0;
+                box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+              " />`
+        : ad.videoUrl
+        ? `<video src="${ad.videoUrl}" style="
+                width: 140px;
+                height: 140px;
+                border-radius: 10px;
+                flex-shrink: 0;
+                box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+              " controls muted></video>`
+        : `<div style="
                 width: 140px;
                 height: 140px;
                 background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -2141,7 +1974,19 @@ function showContentView(
                 font-weight: 600;
                 flex-shrink: 0;
                 box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-              ">Image/Video</div>
+              ">Image/Video</div>`;
+
+      contentHTML += `
+          <div class="ad-suggestion" style="
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(59, 130, 246, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(59, 130, 246, 0.1)'">
+            <div style="display: flex; gap: 20px; margin-bottom: 16px;">
+              ${mediaBlock}
               <div style="flex: 1;">
                 <h4 style="
                   font-size: 18px;
@@ -2234,6 +2079,7 @@ function showContentView(
             color: white;
             font-size: 24px;
             font-weight: bold;
+            text-align: center;
           ">${topic.sentiment === "positive" ? "✓" : "⚠"}</div>
           <div>
             <div style="
@@ -2405,12 +2251,20 @@ function populateAdsView(dashboard: HTMLElement) {
 
   let adsHTML = "";
   allAds.forEach(({ ad }) => {
+    const imageSection = ad.imageUrl
+      ? `<div style="flex-shrink:0;"><img src="${ad.imageUrl}" alt="${ad.title}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e1e8ed;" /></div>`
+      : "";
+
     adsHTML += `
       <div class="list-item" style="
         padding: 16px;
         border-bottom: 1px solid #e1e8ed;
         cursor: pointer;
+        display:flex;
+        gap:12px;
+        align-items:center;
       " onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='#ffffff'">
+        ${imageSection}
         <div style="font-size: 14px; color: #14171a; margin-bottom: 8px; font-weight: 500;">
           ${ad.title}
         </div>
