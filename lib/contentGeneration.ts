@@ -6,6 +6,7 @@ import type {
   BrandVoiceTweet,
   AdIdea,
   GeneratedImage,
+  VideoAdIdea
 } from "./types/tweet";
 
 interface GenerateAdsInput {
@@ -56,6 +57,17 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
         - Image prompt must be impactful, realistic, clean/sleek, and with copywriting
         - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood, composition)
+        
+        New: Recommend a bidding strategy and target bid (in micro-currency).
+        - bid_strategy: 'AUTO' | 'MAX' | 'TARGET'
+        - Logic:
+          * Use 'AUTO' for Awareness objectives (lowest cost).
+          * Use 'MAX' for Engagement/Conversions (get volume).
+          * Use 'TARGET' only if you want to control CPA strictly.
+        - target_bid: number (e.g. 500000 for $0.50). Set to 0 if AUTO.
+        
+        New: Recommend basic targeting criteria.
+        - targeting: { keywords: string[], interests: string[] }
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -72,7 +84,13 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
                       .replace("Visual Style Pattern: ", "")
                       .substring(0, 150)}`
                   : " with professional composition"
-              })
+              }),
+              "bid_strategy": "AUTO" | "MAX" | "TARGET",
+              "target_bid": number,
+              "targeting": {
+                "keywords": string[],
+                "interests": string[]
+              }
             },
             ... (exactly 4 items)
           ]
@@ -121,6 +139,9 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
         suggested_tweet_text: `${ad.headline}\n\n${ad.body}\n\n${
           ad.call_to_action
         } ${ad.hashtags.join(" ")}`.trim(),
+        bid_strategy: ad.bid_strategy || 'AUTO',
+        target_bid: ad.target_bid || 1000000,
+        targeting: ad.targeting || { keywords: [], interests: [] }
       }));
 
     const images: GeneratedImage[] = [];
@@ -164,12 +185,6 @@ interface GenerateVideoAdsInput {
   voice_samples: BrandVoiceTweet[];
   brand_handle: string;
   waitForCompletion?: boolean; // If true, waits for video generation to complete
-}
-
-export interface VideoAdIdea extends AdIdea {
-  video_url?: string;
-  video_id?: string;
-  video_status?: "pending" | "processing" | "completed" | "failed";
 }
 
 /**
@@ -252,6 +267,16 @@ export async function generateVideoAdIdeas(
         - Focus on ONE clear visual: a product, a scene, or a single action
         - Use descriptive but simple language: "slow camera pan", "gentle zoom", "static shot with subtle lighting"
         - Video prompts should be specific to the brand and product.
+        
+        New: Recommend a bidding strategy and target bid (in micro-currency).
+        - bid_strategy: 'AUTO' | 'MAX' | 'TARGET'
+        - Logic:
+          * Use 'AUTO' for Awareness objectives.
+          * Use 'MAX' for Engagement/Conversions.
+        - target_bid: number (e.g. 500000 for $0.50). Set to 0 if AUTO.
+        
+        New: Recommend basic targeting criteria.
+        - targeting: { keywords: string[], interests: string[] }
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -268,7 +293,13 @@ export async function generateVideoAdIdeas(
                       .replace("Visual Style Pattern: ", "")
                       .substring(0, 150)}`
                   : ""
-              } - use slow camera movements or static shots, avoid complex scenes)
+              } - use slow camera movements or static shots, avoid complex scenes),
+              "bid_strategy": "AUTO" | "MAX" | "TARGET",
+              "target_bid": number,
+              "targeting": {
+                "keywords": string[],
+                "interests": string[]
+              }
             },
             ... (exactly 3 items)
           ]
@@ -312,10 +343,14 @@ export async function generateVideoAdIdeas(
         format: "video",
         objective: ad.objective,
         image_prompt: ad.video_prompt.trim(), // Store video prompt in image_prompt field for compatibility
+        video_prompt: ad.video_prompt.trim(),
         suggested_tweet_text: `${ad.headline}\n\n${ad.body}\n\n${
           ad.call_to_action
         } ${ad.hashtags.join(" ")}`.trim(),
         video_status: "pending" as const,
+        bid_strategy: ad.bid_strategy || 'AUTO',
+        target_bid: ad.target_bid || 1000000,
+        targeting: ad.targeting || { keywords: [], interests: [] }
       }));
 
     // Generate videos for each ad

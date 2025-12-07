@@ -98,6 +98,23 @@ export type PublicMentionTweet = {
     format: 'single_image' | 'carousel' | 'video';
     objective: 'awareness' | 'engagement' | 'conversions' | 'retention';
     suggested_tweet_text?: string;    
+    
+    // New fields for Ad Group automation
+    bid_strategy?: 'AUTO' | 'MAX' | 'TARGET';
+    target_bid?: number; // In micro-currency (e.g. 1000000 = 1.00)
+    targeting?: {
+      keywords?: string[];
+      interests?: string[];
+      locations?: string[]; // e.g. Country codes
+      gender?: 'Male' | 'Female' | 'Any';
+    };
+  };
+
+  export type VideoAdIdea = AdIdea & {
+    video_prompt: string;
+    video_url?: string;
+    video_status?: "pending" | "processing" | "completed" | "failed";
+    video_id?: string;
   };
 
   // generated image for the ad idea
@@ -110,4 +127,3 @@ export type PublicMentionTweet = {
     height: number;
     seed?: number;              
   };
-
