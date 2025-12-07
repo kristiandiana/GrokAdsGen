@@ -2,6 +2,7 @@ import { searchPublicMentions, searchBrandVoiceTweets } from "./twitterClient";
 import { scoreTweets } from "./analysis";
 import { analyzeMentions, buildAnalysisFromAnnotations, Analysis } from "./sentimentAnalysis";
 import { generateSuggestions } from "./suggestions";
+import { generateActionableSteps } from "./actionableSteps";
 import { generateAdIdeas, generateVideoAdIdeas, VideoAdIdea } from "./contentGeneration";
 import {
   cleanupSentimentCache,
@@ -27,6 +28,7 @@ export type BrandInsights = {
     status: "pending" | "processing" | "completed" | "failed";
     thumbnail_url?: string;
   }>;
+  actionable_steps?: Record<string, string>;
 };
 
 export async function analyzeAndCacheMentions(
@@ -79,6 +81,21 @@ export async function buildBrandInsights(brand: string): Promise<BrandInsights> 
   });
 
   console.log(`[sentimentPipeline] Generated ${suggestions.length} suggestions.`);
+
+  let actionableSteps: Record<string, string> = {};
+  try {
+    actionableSteps = await generateActionableSteps({
+      topicSummaries: analysis.topicSummaries,
+      suggestions,
+      generalSentiment: analysis.generalSentiment,
+      voice_samples: brand_voice,
+      brand_handle: brand,
+    });
+    const count = Object.keys(actionableSteps).length;
+    console.log(`[sentimentPipeline] Generated actionable steps for ${count} topics.`);
+  } catch (err) {
+    console.warn("[sentimentPipeline] Failed to generate actionable steps", err);
+  }
 
   // Optionally generate creative assets (best-effort, won't fail pipeline)
   let generatedAds: AdIdea[] = [];
@@ -146,5 +163,6 @@ export async function buildBrandInsights(brand: string): Promise<BrandInsights> 
     generated_images: generatedImages,
     generated_video_ads: generatedVideoAds,
     generated_videos: generatedVideos,
+    actionable_steps: actionableSteps,
   };
 }

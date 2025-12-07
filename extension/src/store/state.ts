@@ -82,6 +82,7 @@ interface BrandInsights {
   brand_voice: BrandVoiceTweet[];
   analysis: AnalysisResponse;
   suggestions: Suggestion[];
+  actionable_steps?: Record<string, string>;
   generated_ads?: Array<{
     id: string;
     headline: string;
@@ -446,11 +447,14 @@ class StateManager {
       ).map((suggestion, index) => this.mapSuggestionToAd(suggestion, index));
       const generatedAds = generatedAdsByTopic.get(normalizedTopic) || [];
       const ads = [...suggestionAds, ...generatedAds];
-      const actionableStep = this.buildActionableStep(
-        summary,
-        suggestionsByTopic.get(normalizedTopic) || [],
-        insights.analysis.generalSentiment.label
-      );
+      const actionableStep =
+        insights.actionable_steps?.[summary.topic] ||
+        insights.actionable_steps?.[normalizedTopic] ||
+        this.buildActionableStep(
+          summary,
+          suggestionsByTopic.get(normalizedTopic) || [],
+          insights.analysis.generalSentiment.label
+        );
 
       return {
         id: `topic-${summary.topic}`,
