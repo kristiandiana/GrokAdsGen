@@ -116,12 +116,20 @@ export async function buildBrandInsights(brand: string): Promise<BrandInsights> 
         suggestion: primarySuggestion,
         voice_samples: brand_voice,
         brand_handle: brand,
-        waitForCompletion: false,
+        waitForCompletion: true,
       });
       generatedVideoAds = videoResult.ads;
       generatedVideos = videoResult.videos;
       console.log(
         `[sentimentPipeline] Generated ${generatedVideoAds.length} video ads (status only)`
+      );
+      console.log(
+        "[sentimentPipeline] Video assets:",
+        generatedVideos.map((v) => ({
+          ad: v.ad_idea_id,
+          status: v.status,
+          url: v.video_url,
+        }))
       );
     } catch (err) {
       console.warn("[sentimentPipeline] Failed to generate video ads", err);

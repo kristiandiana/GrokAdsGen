@@ -323,6 +323,9 @@ class StateManager {
       const posts = topics.flatMap((t) => t.posts);
       const ads = topics.flatMap((t) => t.ads);
 
+      console.log("[state] generated_video_ads", insights.generated_video_ads);
+      console.log("[state] generated_videos", insights.generated_videos);
+
       this.setState({
         topics,
         posts,
