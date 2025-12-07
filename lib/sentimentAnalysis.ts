@@ -1,9 +1,18 @@
 import { PublicMentionTweet, BrandVoiceTweet, AnnotatedMention, TopicSummary } from "./types/tweet";
 import * as vader from 'vader-sentiment';
 import keyword_extractor from 'keyword-extractor';
+import { callGrok } from "./grokClient";
 
-// Removing fixed ALLOWED_TOPICS to allow dynamic clustering
-// const ALLOWED_TOPICS = [...]
+// Blacklist for noise reduction
+const STOPWORDS = new Set([
+    'https', 'http', 't.co', 'www', 'com', 'org', 'net',
+    'status', 'tweet', 'twitter', 'post', 'reply',
+    'one', 'two', 'new', 'day', 'time', 'year', 'week',
+    'today', 'tomorrow', 'yesterday', 'now', 'just',
+    'get', 'got', 'go', 'going', 'make', 'made',
+    'people', 'thing', 'way', 'im', 'dont', 'cant',
+    'tesla', 'elon', 'musk' // Brand names often too generic for "topic" unless specific feature
+]);
 
 export interface Analysis {
     annotated: AnnotatedMention[];
@@ -98,6 +107,52 @@ export function buildAnalysisFromAnnotations(annotated: AnnotatedMention[]): Ana
     };
 }
 
+async function consolidateTopics(rawKeywords: string[]): Promise<Map<string, string>> {
+    // Count frequencies
+    const freq = new Map<string, number>();
+    rawKeywords.forEach(k => freq.set(k, (freq.get(k) || 0) + 1));
+
+    // Get top 60 keywords
+    const topKeywords = Array.from(freq.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 60)
+        .map(e => `${e[0]} (${e[1]})`);
+
+    if (topKeywords.length === 0) return new Map();
+
+    const prompt = `
+    You are a data analyst. I have a list of raw extracted keywords from social media tweets about a brand.
+    Your job is to cluster them into exactly 5-8 distinct, high-level business topics (e.g. "Customer Support", "Product Quality", "Shipping", "Pricing", "User Experience").
+
+    Rules:
+    1. IGNORE usernames (starting with @), URLs, or generic noise words if any slipped through.
+    2. Group specific items under broader themes (e.g. "brakes", "engine", "tires" -> "Vehicle Performance").
+    3. Return a JSON object mapping the RAW KEYWORD to the HIGH-LEVEL TOPIC.
+    4. Only map the keywords provided.
+
+    Raw Keywords:
+    ${topKeywords.join(', ')}
+
+    Return format:
+    {
+      "mapping": {
+        "raw_keyword_1": "High Level Topic A",
+        "raw_keyword_2": "High Level Topic B"
+      }
+    }
+    `;
+
+    try {
+        const result = await callGrok(prompt, 'grok-4-1-fast-reasoning', true, 0);
+        if (result && result.mapping) {
+            return new Map(Object.entries(result.mapping));
+        }
+    } catch (err) {
+        console.error("Topic consolidation failed:", err);
+    }
+    return new Map();
+}
+
 export async function analyzeMentions(
     mentions: PublicMentionTweet[],
     voice_samples: BrandVoiceTweet[] = []
@@ -111,73 +166,99 @@ export async function analyzeMentions(
         }
 
         console.log(`[VADER] Starting fast sentiment analysis on ${mentions.length} tweets...`);
-        const annotated: AnnotatedMention[] = [];
+        
+        // Phase 1: Local Analysis & Keyword Extraction
+        const tempAnnotated: { 
+            tweet_id: string; 
+            sentiment: 'positive'|'neutral'|'negative'; 
+            sentiment_score: number;
+            intensity: 'low'|'medium'|'high';
+            raw_keywords: string[];
+        }[] = [];
+
+        const allRawKeywords: string[] = [];
 
         for (const mention of mentions) {
             try {
-                // 1. Calculate Sentiment using VADER
-                // VADER returns { neg, neu, pos, compound }
+                // VADER Sentiment
                 const result = vader.SentimentIntensityAnalyzer.polarity_scores(mention.text);
-                const compound = result.compound; // -1.0 to 1.0
-
-                // Determine Sentiment Label
+                const compound = result.compound;
+                
                 let sentiment: 'positive' | 'neutral' | 'negative';
                 if (compound >= 0.05) sentiment = 'positive';
                 else if (compound <= -0.05) sentiment = 'negative';
                 else sentiment = 'neutral';
 
-                // Determine Intensity
-                // 0.05 - 0.3 = low
-                // 0.3 - 0.6 = medium
-                // 0.6+ = high
-                // For neutral, we can use the 'neu' score or just default to low
                 const absScore = Math.abs(compound);
                 let intensity: 'low' | 'medium' | 'high' = 'low';
                 if (absScore > 0.6) intensity = 'high';
                 else if (absScore > 0.3) intensity = 'medium';
 
-                // Normalize Score to 0-1 for our internal format
-                // VADER is -1 to 1. 
-                // If we want 0-1 where 1 is "very positive" and 0 is "very negative", we could do (compound + 1) / 2
-                // BUT our type says: sentiment_score: number (0.00 to 1.00)
-                // And usage usually implies "confidence in the label" or "positivity".
-                // Let's use (compound + 1) / 2 for a global positivity index, 
-                // OR use Math.abs(compound) if it represents "strength of current sentiment".
-                // Looking at `buildAnalysisFromAnnotations`:
-                // let score = annotation.sentiment === 'positive' ? annotation.sentiment_score : annotation.sentiment === 'negative' ? 1 - annotation.sentiment_score ...
-                // This implies sentiment_score is a "magnitude of match" or "probability".
-                // Let's stick to mapping VADER compound directly to a 0-1 positivity scale:
                 const normalizedScore = (compound + 1) / 2;
 
-                // 2. Extract Topics using Keyword Extractor
-                // This is a naive extraction but fast.
-                const extractionResult = keyword_extractor.extract(mention.text, {
+                // Keyword Extraction
+                // Manually clean text first to remove @mentions and URLs
+                const cleanText = mention.text
+                    .replace(/@\w+/g, '') // remove mentions
+                    .replace(/https?:\/\/\S+/g, '') // remove links
+                    .replace(/[^a-zA-Z\s]/g, ''); // remove special chars
+
+                const extractionResult = keyword_extractor.extract(cleanText, {
                     language: "english",
                     remove_digits: true,
                     return_changed_case: true,
                     remove_duplicates: true,
                 });
 
-                // Take top 2 keywords as topics, exclude common brand names if needed (not implementing blacklist here yet)
-                const topics = extractionResult.slice(0, 2);
-                if (topics.length === 0) topics.push('general');
+                // Filter stopwords
+                const filteredKeywords = extractionResult.filter(k => 
+                    k.length > 2 && !STOPWORDS.has(k.toLowerCase())
+                );
 
-                // 3. Construct AnnotatedMention
-                annotated.push({
+                tempAnnotated.push({
                     tweet_id: mention.id,
                     sentiment,
-                    sentiment_score: normalizedScore, // 0.0 (neg) to 1.0 (pos)
-                    topics,
-                    key_phrase: topics[0] || null,
-                    is_sarcasm: false, // VADER doesn't detect sarcasm reliably
+                    sentiment_score: normalizedScore,
                     intensity,
-                    analyzed_at: Date.now(),
+                    raw_keywords: filteredKeywords
                 });
+
+                allRawKeywords.push(...filteredKeywords);
 
             } catch (err) {
                 console.error(`[VADER] Error analyzing tweet ${mention.id}:`, err);
             }
         }
+
+        // Phase 2: Topic Consolidation (Grok)
+        console.log(`[Topics] Consolidating ${allRawKeywords.length} keywords...`);
+        const topicMapping = await consolidateTopics(allRawKeywords);
+        console.log(`[Topics] Mapped to ${new Set(topicMapping.values()).size} distinct themes.`);
+
+        // Phase 3: Final Annotation Construction
+        const annotated: AnnotatedMention[] = tempAnnotated.map(item => {
+            // Map raw keywords to high-level topics
+            const highLevelTopics = new Set<string>();
+            item.raw_keywords.forEach(k => {
+                const mapped = topicMapping.get(k);
+                if (mapped) highLevelTopics.add(mapped);
+            });
+
+            const finalTopics = Array.from(highLevelTopics);
+            // If no mapped topic found, use "General Brand Sentiment" or skip
+            if (finalTopics.length === 0) finalTopics.push('General Chatter');
+
+            return {
+                tweet_id: item.tweet_id,
+                sentiment: item.sentiment,
+                sentiment_score: item.sentiment_score,
+                topics: finalTopics,
+                key_phrase: item.raw_keywords[0] || null, // Keep raw keyword as key phrase context
+                is_sarcasm: false,
+                intensity: item.intensity,
+                analyzed_at: Date.now()
+            };
+        });
 
         console.log(`[VADER] Completed analysis. Annotated ${annotated.length} tweets.`);
         return buildAnalysisFromAnnotations(annotated);

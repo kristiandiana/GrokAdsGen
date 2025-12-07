@@ -52,7 +52,7 @@ export async function analyzeAndCacheMentions(
 export async function buildBrandInsights(brand: string): Promise<BrandInsights> {
   console.log(`[sentimentPipeline] Building insights for brand=${brand}`);
   const [public_mentions, brand_voice] = await Promise.all([
-    searchPublicMentions(brand, 10000),
+    searchPublicMentions(brand, 1000),
     searchBrandVoiceTweets(brand),
   ]);
 
