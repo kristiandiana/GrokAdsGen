@@ -94,7 +94,7 @@ function tryInject(): boolean {
   // Create a new navigation item matching the structure
   const brandPulseItem = document.createElement('li');
   brandPulseItem.id = 'brandpulse-nav-item';
-  brandPulseItem.className = 'NavigationSidebar-item NavigationSidebar-item--hasChildItemGroup';
+  brandPulseItem.className = 'NavigationSidebar-item';
   brandPulseItem.setAttribute('role', 'presentation');
 
   brandPulseItem.innerHTML = `
@@ -108,7 +108,6 @@ function tryInject(): boolean {
         <span class="NavigationSidebar-itemTargetInnerWrapper">
           <span aria-hidden="true" class="Icon NavigationSidebar-itemStartIcon" role="img"></span>
           <span class="NavigationSidebar-itemTargetChildren">BrandPulse</span>
-          <span aria-hidden="true" class="Icon Icon--caretDown NavigationSidebar-itemEndIcon" role="img"></span>
         </span>
       </button>
     </div>
@@ -139,11 +138,33 @@ function tryInject(): boolean {
   
   if (button) {
     button.addEventListener('click', () => {
+      // Remove is-selected from all other navigation items
+      document.querySelectorAll('.NavigationSidebar-item.is-selected').forEach(item => {
+        if (item !== brandPulseItem) {
+          item.classList.remove('is-selected');
+        }
+      });
+      
+      // Add is-selected class to BrandPulse item
+      brandPulseItem.classList.add('is-selected');
+      
       showBrandPulseView();
       // Update button state
       button.setAttribute('aria-expanded', 'true');
-      // Add visual indication (highlight)
-      brandPulseItem.style.backgroundColor = 'rgba(29, 161, 242, 0.1)';
+    });
+  }
+  
+  // Watch for clicks on other sidebar items to remove selection from BrandPulse
+  const sidebar = document.querySelector('.NavigationSidebar');
+  if (sidebar) {
+    sidebar.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      // Check if clicked item is a navigation button (but not BrandPulse)
+      const clickedItem = target.closest('.NavigationSidebar-item');
+      if (clickedItem && clickedItem !== brandPulseItem) {
+        brandPulseItem.classList.remove('is-selected');
+        isBrandPulseActive = false;
+      }
     });
   }
 
