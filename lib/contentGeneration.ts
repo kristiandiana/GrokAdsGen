@@ -1,6 +1,6 @@
 import { callGrok, generateImage } from "./grokClient";
 import { generateVideo } from "./pikaClient";
-import { analyzeBrandVisuals } from "./visionAnalysis"; 
+import { analyzeBrandVisuals } from "./visionAnalysis";
 import type {
   Suggestion,
   BrandVoiceTweet,
@@ -21,11 +21,11 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
   const { suggestion, voice_samples, brand_handle } = input;
 
   // 1. Analyze Visual Style (if any voice samples have images)
-  const allMedia = voice_samples.flatMap(v => v.media || []);
+  const allMedia = voice_samples.flatMap((v) => v.media || []);
   const visualAnalysis = await analyzeBrandVisuals(allMedia);
-  const visualStyleContext = visualAnalysis.consolidatedStyle 
+  const visualStyleContext = visualAnalysis.consolidatedStyle
     ? `\nVISUAL STYLE GUIDE (Must match this aesthetic): ${visualAnalysis.consolidatedStyle}\n`
-    : '';
+    : "";
 
   const voiceContext =
     voice_samples.length > 0
@@ -46,12 +46,16 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
 
         Rules:
         - Match the brand's voice 100% from the tweets
-        - Match the brand's VISUAL STYLE for image prompts
+        - Match the brand's VISUAL STYLE for image prompts${
+          visualAnalysis.consolidatedStyle
+            ? ` - incorporate the lighting, color palette, mood, and composition from the Visual Style Guide above`
+            : ""
+        }
         - Vary objectives: one awareness, one engagement, one conversions, one retention
         - Format: single_image (1024x1024)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
         - Image prompt must be impactful, realistic, clean/sleek, and with copywriting
-        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood)
+        - Image prompt must ALIGN with the Visual Style Guide provided above (lighting, color, mood, composition)
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -62,7 +66,13 @@ export async function generateAdIdeas(input: GenerateAdsInput): Promise<{
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions" | "retention",
-              "image_prompt": string (detailed, high-quality visual description matching style guide)
+              "image_prompt": string (detailed, high-quality visual description${
+                visualAnalysis.consolidatedStyle
+                  ? ` matching the visual style: ${visualAnalysis.consolidatedStyle
+                      .replace("Visual Style Pattern: ", "")
+                      .substring(0, 150)}`
+                  : " with professional composition"
+              })
             },
             ... (exactly 4 items)
           ]
@@ -187,11 +197,11 @@ export async function generateVideoAdIdeas(
   } = input;
 
   // 1. Analyze Visual Style (if any voice samples have images)
-  const allMedia = voice_samples.flatMap(v => v.media || []);
+  const allMedia = voice_samples.flatMap((v) => v.media || []);
   const visualAnalysis = await analyzeBrandVisuals(allMedia);
-  const visualStyleContext = visualAnalysis.consolidatedStyle 
+  const visualStyleContext = visualAnalysis.consolidatedStyle
     ? `\nVISUAL STYLE GUIDE (Must match this aesthetic): ${visualAnalysis.consolidatedStyle}\n`
-    : '';
+    : "";
 
   // First generate ad ideas (similar to generateAdIdeas but for video format)
   const voiceContext =
@@ -213,13 +223,35 @@ export async function generateVideoAdIdeas(
 
         Rules:
         - Match the brand's voice 100% from the tweets
-        - Match the brand's VISUAL STYLE for video prompts
+        - Match the brand's VISUAL STYLE for video prompts${
+          visualAnalysis.consolidatedStyle
+            ? ` - incorporate the lighting, color palette, mood, and composition from the Visual Style Guide above`
+            : ""
+        }
         - Vary objectives: one awareness, one engagement, one conversions
         - Format: video (16:9 aspect ratio recommended)
         - Include punchy headline, compelling body, clear CTA, 2–4 relevant hashtags
-        - Video prompt must be detailed, cinematic, and describe motion/action
-        - Video prompts should be 2-3 sentences describing the visual narrative
-        - Video prompts must ALIGN with the Visual Style Guide provided above
+        
+        CRITICAL VIDEO PROMPT GUIDELINES (for best quality output):
+        ${
+          visualAnalysis.consolidatedStyle
+            ? `- CRITICAL: Video prompts MUST match the brand's visual style: ${visualAnalysis.consolidatedStyle
+                .replace("Visual Style Pattern: ", "")
+                .substring(0, 300)}\n        `
+            : ""
+        }- Video prompts should be SIMPLE and FOCUSED - avoid complex scenes with multiple moving elements
+        - Use MINIMAL MOTION: prefer slow, subtle camera movements (gentle pan, slow zoom, or static shot)
+        - Incorporate the brand's visual aesthetic: ${
+          visualAnalysis.consolidatedStyle
+            ? "match the lighting, color palette, mood, and composition from the visual style guide above"
+            : "use professional, cinematic composition"
+        }
+        - Avoid: fast movements, multiple subjects moving, complex action sequences, rapid transitions
+        - Prefer: single subject, slow camera movement, cinematic lighting, professional composition
+        - Keep prompts to 1-2 sentences maximum - be concise and specific
+        - Focus on ONE clear visual: a product, a scene, or a single action
+        - Use descriptive but simple language: "slow camera pan", "gentle zoom", "static shot with subtle lighting"
+        - Video prompts should be specific to the brand and product.
 
         Return ONLY a JSON object with this exact structure:
         {
@@ -230,7 +262,13 @@ export async function generateVideoAdIdeas(
               "call_to_action": string,
               "hashtags": string[],
               "objective": "awareness" | "engagement" | "conversions",
-              "video_prompt": string (detailed, cinematic video description with motion matching style guide)
+              "video_prompt": string (1-2 sentences, simple and focused, minimal motion${
+                visualAnalysis.consolidatedStyle
+                  ? ` - incorporate the brand's visual style: ${visualAnalysis.consolidatedStyle
+                      .replace("Visual Style Pattern: ", "")
+                      .substring(0, 150)}`
+                  : ""
+              } - use slow camera movements or static shots, avoid complex scenes)
             },
             ... (exactly 3 items)
           ]
@@ -297,6 +335,8 @@ export async function generateVideoAdIdeas(
             aspect_ratio: "16:9",
             resolution: "720p",
             duration: 5,
+            negative_prompt:
+              "fast motion, rapid movement, multiple subjects moving, complex action, chaotic scene, blurry, low quality, distorted",
           });
 
           ad.video_url = result.video_url;
@@ -323,6 +363,8 @@ export async function generateVideoAdIdeas(
             aspect_ratio: "16:9",
             resolution: "720p",
             duration: 5,
+            negative_prompt:
+              "fast motion, rapid movement, multiple subjects moving, complex action, chaotic scene, blurry, low quality, distorted",
           });
 
           ad.video_id = videoResponse.video_id;
