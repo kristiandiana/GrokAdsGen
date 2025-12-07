@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:pika": "ts-node --transpile-only scripts/test-pika.ts",
+    "test:video-ads": "ts-node --transpile-only scripts/test-video-ads.ts"
   },
   "dependencies": {
+    "@fal-ai/client": "^1.7.2",
+    "dotenv": "^17.2.3",
     "next": "^14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
